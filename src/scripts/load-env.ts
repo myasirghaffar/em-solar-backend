@@ -1,5 +1,5 @@
-import dotenv from 'dotenv';
-import { resolve } from 'node:path';
+import dotenv from "dotenv";
+import { resolve } from "node:path";
 
 /**
  * Load `.dev.vars` then `.env` with override so `.env` wins over stale `.dev.vars`.
@@ -8,11 +8,11 @@ import { resolve } from 'node:path';
  */
 export function loadBackendEnv(): void {
   const presetDatabaseUrl = process.env.DATABASE_URL?.trim();
-  dotenv.config({ path: resolve(process.cwd(), '.dev.vars') });
-  dotenv.config({ path: resolve(process.cwd(), '.env'), override: true });
+  dotenv.config({ path: resolve(process.cwd(), ".dev.vars") });
+  dotenv.config({ path: resolve(process.cwd(), ".env"), override: true });
   if (presetDatabaseUrl) {
     process.env.DATABASE_URL = presetDatabaseUrl;
   }
 }
 
-export { normalizeDatabaseUrl } from '../lib/normalize-database-url';
+export { normalizeDatabaseUrl } from "../lib/normalize-database-url";

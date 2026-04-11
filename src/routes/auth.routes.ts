@@ -8,22 +8,63 @@ import { verifyRefreshToken } from '../lib/jwt';
 import { buildErrorResponse, buildSuccessResponse } from '../lib/responses';
 import { requireAuth, type AppBindings, type AppVariables } from '../middleware/auth';
 import * as authService from '../services/auth.service';
-import { loginSchema, refreshSchema, registerSchema } from '../validators/schemas';
+import {
+  adminRegisterSchema,
+  forgotPasswordSchema,
+  loginSchema,
+  refreshSchema,
+  registerSchema,
+  resendVerificationSchema,
+  resetPasswordSchema,
+  verifyEmailSchema,
+} from '../validators/schemas';
 
 export const authRoutes = new Hono<{ Bindings: AppBindings; Variables: AppVariables }>();
 
 authRoutes.post('/register', zValidator('json', registerSchema), async (c) => {
   const body = c.req.valid('json');
   const db = createDb(c.env);
-  const tokens = await authService.register(db, c.env, body);
-  return c.json(buildSuccessResponse(tokens, SuccessCodes.AUTH_REGISTER_SUCCESS));
+  const result = await authService.register(db, c.env, body);
+  return c.json(
+    buildSuccessResponse(result, SuccessCodes.AUTH_REGISTER_PENDING_VERIFICATION),
+    HttpStatusCode.CREATED,
+  );
+});
+
+authRoutes.post('/register-admin', zValidator('json', adminRegisterSchema), async (c) => {
+  const body = c.req.valid('json');
+  const db = createDb(c.env);
+  const result = await authService.registerAdmin(db, c.env, body);
+  return c.json(
+    buildSuccessResponse(result, SuccessCodes.AUTH_REGISTER_PENDING_VERIFICATION),
+    HttpStatusCode.CREATED,
+  );
+});
+
+authRoutes.post('/verify-email', zValidator('json', verifyEmailSchema), async (c) => {
+  const { token } = c.req.valid('json');
+  const db = createDb(c.env);
+  const data = await authService.verifyEmail(db, c.env, token);
+  return c.json(buildSuccessResponse(data, SuccessCodes.AUTH_VERIFY_EMAIL_SUCCESS));
+});
+
+authRoutes.post('/resend-verification', zValidator('json', resendVerificationSchema), async (c) => {
+  const { email } = c.req.valid('json');
+  const db = createDb(c.env);
+  const extra = await authService.resendVerification(db, c.env, email);
+  return c.json(
+    buildSuccessResponse(
+      Object.keys(extra).length ? extra : null,
+      SuccessCodes.AUTH_RESEND_VERIFICATION_SUCCESS,
+    ),
+  );
 });
 
 authRoutes.post('/login', zValidator('json', loginSchema), async (c) => {
   const body = c.req.valid('json');
   const db = createDb(c.env);
-  const tokens = await authService.login(db, c.env, body);
-  return c.json(buildSuccessResponse(tokens, SuccessCodes.AUTH_LOGIN_SUCCESS));
+  const data = await authService.login(db, c.env, body);
+  return c.json(buildSuccessResponse(data, SuccessCodes.AUTH_LOGIN_SUCCESS));
 });
 
 authRoutes.post('/logout', requireAuth, async (c) => {
@@ -44,6 +85,25 @@ authRoutes.post('/refresh', zValidator('json', refreshSchema), async (c) => {
     );
   }
   const db = createDb(c.env);
-  const tokens = await authService.refreshTokens(db, c.env, payload.sub, refreshToken);
-  return c.json(buildSuccessResponse(tokens, SuccessCodes.AUTH_REFRESH_SUCCESS));
+  const data = await authService.refreshTokens(db, c.env, payload.sub, refreshToken);
+  return c.json(buildSuccessResponse(data, SuccessCodes.AUTH_REFRESH_SUCCESS));
+});
+
+authRoutes.post('/forgot-password', zValidator('json', forgotPasswordSchema), async (c) => {
+  const { email } = c.req.valid('json');
+  const db = createDb(c.env);
+  const extra = await authService.forgotPassword(db, c.env, email);
+  return c.json(
+    buildSuccessResponse(
+      Object.keys(extra).length ? extra : null,
+      SuccessCodes.AUTH_FORGOT_PASSWORD_SUCCESS,
+    ),
+  );
+});
+
+authRoutes.post('/reset-password', zValidator('json', resetPasswordSchema), async (c) => {
+  const body = c.req.valid('json');
+  const db = createDb(c.env);
+  await authService.resetPassword(db, body);
+  return c.json(buildSuccessResponse(null, SuccessCodes.AUTH_RESET_PASSWORD_SUCCESS));
 });

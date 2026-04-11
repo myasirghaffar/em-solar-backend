@@ -1,0 +1,51 @@
+/**
+ * Run the API on Node (default `npm run dev`) so Postgres over TCP works reliably.
+ * `wrangler dev` + Miniflare often hangs on outbound DB connections with postgres.js.
+ */
+import { serve } from '@hono/node-server';
+import { loadBackendEnv } from './scripts/load-env';
+import type { Env } from './types';
+import app from './index';
+
+loadBackendEnv();
+
+function buildEnv(): Env {
+  const databaseUrl = process.env.DATABASE_URL?.trim();
+  const access = process.env.JWT_ACCESS_SECRET?.trim();
+  const refresh = process.env.JWT_REFRESH_SECRET?.trim();
+  if (!databaseUrl) {
+    throw new Error('DATABASE_URL is missing. Set it in em-solar-backend/.env');
+  }
+  if (!access || !refresh) {
+    throw new Error('JWT_ACCESS_SECRET and JWT_REFRESH_SECRET are required in .env');
+  }
+
+  return {
+    DATABASE_URL: databaseUrl,
+    JWT_ACCESS_SECRET: access,
+    JWT_REFRESH_SECRET: refresh,
+    JWT_ACCESS_EXPIRATION: process.env.JWT_ACCESS_EXPIRATION,
+    JWT_REFRESH_EXPIRATION: process.env.JWT_REFRESH_EXPIRATION,
+    ALLOWED_ORIGINS: process.env.ALLOWED_ORIGINS,
+    FRONTEND_APP_URL: process.env.FRONTEND_APP_URL,
+    RESEND_API_KEY: process.env.RESEND_API_KEY,
+    EMAIL_FROM: process.env.EMAIL_FROM,
+    DEV_EXPOSE_EMAIL_LINKS: process.env.DEV_EXPOSE_EMAIL_LINKS,
+    ADMIN_INVITE_SECRET: process.env.ADMIN_INVITE_SECRET,
+  };
+}
+
+const env = buildEnv();
+const port = Number(process.env.PORT) || 8787;
+
+serve({
+  port,
+  fetch: (req) => app.fetch(req, env),
+});
+
+console.info(`em-solar-api (Node) http://localhost:${port} — using .env / .dev.vars`);
+if (!process.env.RESEND_API_KEY?.trim() || !process.env.EMAIL_FROM?.trim()) {
+  console.info(
+    '[email] RESEND_API_KEY + EMAIL_FROM are not both set — verification emails are not sent; register/forgot responses include a "devVerificationUrl" / "devResetUrl" link instead.',
+  );
+}

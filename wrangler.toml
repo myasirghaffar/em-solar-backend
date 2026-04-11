@@ -11,7 +11,7 @@ compatibility_flags = ["nodejs_compat"]
 JWT_ACCESS_EXPIRATION = "15m"
 JWT_REFRESH_EXPIRATION = "7d"
 # Comma-separated origins for browser clients (e.g. your Cloudflare Pages URL)
-ALLOWED_ORIGINS = "http://localhost:5173"
+ALLOWED_ORIGINS = "http://localhost:5173,https://energymart-pk.vercel.app"
 
 # Uncomment after creating a Hyperdrive config in the dashboard and paste its id:
 # [[hyperdrive]]

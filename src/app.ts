@@ -7,7 +7,9 @@ import { HttpStatusCode } from './common/constants/http-status';
 import { AppError } from './lib/app-error';
 import { buildErrorResponse } from './lib/responses';
 import type { AppBindings, AppVariables } from './middleware/auth';
+import { adminStoreRoutes } from './routes/admin-store.routes';
 import { authRoutes } from './routes/auth.routes';
+import { storeRoutes } from './routes/store.routes';
 import { usersRoutes } from './routes/users.routes';
 
 const app = new Hono<{ Bindings: AppBindings; Variables: AppVariables }>();
@@ -16,7 +18,7 @@ app.use(
   '*',
   cors({
     allowHeaders: ['Authorization', 'Content-Type'],
-    allowMethods: ['GET', 'POST', 'PATCH', 'OPTIONS'],
+    allowMethods: ['GET', 'POST', 'PATCH', 'PUT', 'DELETE', 'OPTIONS'],
     credentials: true,
     origin: (origin, c) => {
       const raw = c.env.ALLOWED_ORIGINS ?? '';
@@ -49,6 +51,8 @@ app.get('/health', (c) => c.json({ ok: true }));
 
 app.route('/auth', authRoutes);
 app.route('/users', usersRoutes);
+app.route('/store', storeRoutes);
+app.route('/admin', adminStoreRoutes);
 
 app.onError((err, c) => {
   if (err instanceof AppError) {

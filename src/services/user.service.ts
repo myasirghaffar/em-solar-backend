@@ -13,6 +13,8 @@ export interface CreateUserInput {
   password: string;
   role?: UserRole;
   isActive?: boolean;
+  /** Defaults to false for API signups; set true for seeded admins. */
+  emailVerified?: boolean;
 }
 
 export interface UpdateUserInput {
@@ -24,7 +26,8 @@ export interface UpdateUserInput {
 }
 
 export async function createUser(db: Database, input: CreateUserInput): Promise<UserRow> {
-  const existing = await usersRepo.findUserByEmail(db, input.email);
+  const email = input.email.trim().toLowerCase();
+  const existing = await usersRepo.findUserByEmail(db, email);
   if (existing) {
     throw new AppError(ErrorCodes.USER_ALREADY_EXISTS, HttpStatusCode.CONFLICT);
   }
@@ -32,16 +35,17 @@ export async function createUser(db: Database, input: CreateUserInput): Promise<
   const hashedPassword = await hashPassword(input.password);
 
   return usersRepo.insertUser(db, {
-    name: input.name,
-    email: input.email,
+    name: input.name.trim(),
+    email,
     password: hashedPassword,
     role: input.role ?? UserRole.USER,
     isActive: input.isActive ?? true,
+    emailVerified: input.emailVerified ?? false,
   });
 }
 
 export async function findByEmail(db: Database, email: string): Promise<UserRow | null> {
-  return usersRepo.findUserByEmail(db, email);
+  return usersRepo.findUserByEmail(db, email.trim().toLowerCase());
 }
 
 export async function findById(db: Database, id: string): Promise<UserRow | null> {
@@ -59,7 +63,7 @@ export async function updateUser(
     patch.name = dto.name;
   }
   if (dto.email !== undefined) {
-    patch.email = dto.email;
+    patch.email = dto.email.trim().toLowerCase();
   }
   if (dto.password !== undefined) {
     patch.password = await hashPassword(dto.password);

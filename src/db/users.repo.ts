@@ -20,8 +20,45 @@ export async function findUserById(db: Database, id: string): Promise<UserRow | 
   return row ?? null;
 }
 
+export async function findUserByEmailVerifyToken(
+  db: Database,
+  token: string,
+): Promise<UserRow | null> {
+  const [row] = await db
+    .select()
+    .from(users)
+    .where(eq(users.emailVerifyToken, token))
+    .limit(1);
+  return row ?? null;
+}
+
+export async function findUserByPasswordResetToken(
+  db: Database,
+  token: string,
+): Promise<UserRow | null> {
+  const [row] = await db
+    .select()
+    .from(users)
+    .where(eq(users.passwordResetToken, token))
+    .limit(1);
+  return row ?? null;
+}
+
 export type UserPatch = Partial<
-  Pick<UserRow, 'name' | 'email' | 'password' | 'role' | 'isActive' | 'refreshToken'>
+  Pick<
+    UserRow,
+    | 'name'
+    | 'email'
+    | 'password'
+    | 'role'
+    | 'isActive'
+    | 'refreshToken'
+    | 'emailVerified'
+    | 'emailVerifyToken'
+    | 'emailVerifyExpiresAt'
+    | 'passwordResetToken'
+    | 'passwordResetExpiresAt'
+  >
 >;
 
 export async function updateUserById(

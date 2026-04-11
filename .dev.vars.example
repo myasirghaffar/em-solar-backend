@@ -5,6 +5,12 @@ DATABASE_URL=postgresql://postgres.PROJECT_REF:ENCODED_PASSWORD@aws-0-REGION.poo
 JWT_ACCESS_SECRET=change-me-access-min-32-chars-recommended
 JWT_REFRESH_SECRET=change-me-refresh-different-string
 
+FRONTEND_APP_URL=http://localhost:5173
+DEV_EXPOSE_EMAIL_LINKS=true
+RESEND_API_KEY=
+EMAIL_FROM=EnergyMart <onboarding@resend.dev>
+ADMIN_INVITE_SECRET=
+
 # Optional: for `npm run db:seed-admin` (same keys as .env)
 ADMIN_EMAIL=admin@example.com
 ADMIN_PASSWORD=change-me-min-8-chars

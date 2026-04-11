@@ -15,18 +15,17 @@ loadBackendEnv();
 
 async function main(): Promise<void> {
   const url = getMigrateDatabaseUrl();
-  const email = process.env.ADMIN_EMAIL?.trim();
+  const emailRaw = process.env.ADMIN_EMAIL?.trim() || 'admin@energymart.pk';
   const password = process.env.ADMIN_PASSWORD?.trim();
-  const name = process.env.ADMIN_NAME?.trim() || 'Admin';
+  const name = process.env.ADMIN_NAME?.trim() || 'EnergyMart Admin';
 
-  if (!email || !password) {
-    const missing: string[] = [];
-    if (!email) missing.push('ADMIN_EMAIL');
-    if (!password) missing.push('ADMIN_PASSWORD');
+  if (!password) {
     throw new Error(
-      `Missing ${missing.join(' and ')}. Add them to .env or .dev.vars (see .env.example — not your Supabase database password).`,
+      'Missing ADMIN_PASSWORD. Add it to .env (see .env.example — not your Supabase database password). ADMIN_EMAIL defaults to admin@energymart.pk when unset.',
     );
   }
+
+  const emailNorm = emailRaw.toLowerCase();
 
   const sql = createPostgresFromDatabaseUrl(url);
   const db = drizzle(sql, { schema });
@@ -34,10 +33,10 @@ async function main(): Promise<void> {
   const [existing] = await db
     .select()
     .from(schema.users)
-    .where(eq(schema.users.email, email))
+    .where(eq(schema.users.email, emailNorm))
     .limit(1);
   if (existing) {
-    console.info('Admin user already exists for', email);
+    console.info('Admin user already exists for', emailNorm);
     await sql.end();
     return;
   }
@@ -45,13 +44,14 @@ async function main(): Promise<void> {
   const hashed = await hashPassword(password);
   await db.insert(schema.users).values({
     name,
-    email,
+    email: emailNorm,
     password: hashed,
     role: UserRole.ADMIN,
     isActive: true,
+    emailVerified: true,
   });
 
-  console.info('Admin user created:', email);
+  console.info('Admin user created:', emailNorm);
   await sql.end();
 }
 

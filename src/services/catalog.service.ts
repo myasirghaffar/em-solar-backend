@@ -1,0 +1,306 @@
+import { and, desc, eq } from 'drizzle-orm';
+import type { Database } from '../db/client';
+import { ErrorCodes } from '../common/constants/error-codes';
+import { HttpStatusCode } from '../common/constants/http-status';
+import {
+  consultations,
+  customers,
+  orders,
+  products,
+  type OrderLineItem,
+} from '../db/schema';
+import { AppError } from '../lib/app-error';
+import {
+  consultationToFrontend,
+  customerToFrontend,
+  orderToFrontend,
+  productToFrontend,
+} from '../lib/store-mappers';
+import { buildAnalytics } from './analytics.service';
+
+export function listProductsPublic(db: Database) {
+  return db
+    .select()
+    .from(products)
+    .where(eq(products.status, 'active'))
+    .orderBy(desc(products.id))
+    .then((rows) => rows.map(productToFrontend));
+}
+
+export async function getProductPublic(db: Database, id: number) {
+  const [row] = await db
+    .select()
+    .from(products)
+    .where(and(eq(products.id, id), eq(products.status, 'active')))
+    .limit(1);
+  if (!row) {
+    throw new AppError(ErrorCodes.PRODUCT_NOT_FOUND, HttpStatusCode.NOT_FOUND);
+  }
+  return productToFrontend(row);
+}
+
+export function listProductsAdmin(db: Database) {
+  return db
+    .select()
+    .from(products)
+    .orderBy(desc(products.id))
+    .then((rows) => rows.map(productToFrontend));
+}
+
+export async function createProductAdmin(
+  db: Database,
+  payload: {
+    name: string;
+    category: string;
+    price: number;
+    stock: number;
+    description: string;
+    longDescription?: string;
+    brand?: string;
+    status?: string;
+    images?: string[];
+    specifications?: Record<string, string>;
+    attachments?: { title: string; href: string }[];
+  },
+) {
+  const [row] = await db
+    .insert(products)
+    .values({
+      name: payload.name,
+      category: payload.category,
+      price: String(payload.price),
+      stock: payload.stock,
+      description: payload.description,
+      longDescription: payload.longDescription || null,
+      brand: payload.brand || null,
+      status: payload.status ?? 'active',
+      images: payload.images ?? [],
+      specifications: payload.specifications ?? {},
+      attachments: payload.attachments ?? [],
+    })
+    .returning();
+  if (!row) throw new AppError(ErrorCodes.INTERNAL_SERVER_ERROR, HttpStatusCode.INTERNAL_SERVER_ERROR);
+  return productToFrontend(row);
+}
+
+export async function updateProductAdmin(
+  db: Database,
+  id: number,
+  patch: Partial<{
+    name: string;
+    category: string;
+    price: number;
+    stock: number;
+    description: string;
+    longDescription: string | null;
+    brand: string | null;
+    status: string;
+    images: string[];
+    specifications: Record<string, string>;
+    attachments: { title: string; href: string }[];
+  }>,
+) {
+  const [existing] = await db.select().from(products).where(eq(products.id, id)).limit(1);
+  if (!existing) {
+    throw new AppError(ErrorCodes.PRODUCT_NOT_FOUND, HttpStatusCode.NOT_FOUND);
+  }
+  const set: Partial<{
+    name: string;
+    category: string;
+    price: string;
+    stock: number;
+    description: string;
+    longDescription: string | null;
+    brand: string | null;
+    status: string;
+    images: string[];
+    specifications: Record<string, string>;
+    attachments: { title: string; href: string }[];
+    updatedAt: Date;
+  }> = { updatedAt: new Date() };
+  if (patch.name !== undefined) set.name = patch.name;
+  if (patch.category !== undefined) set.category = patch.category;
+  if (patch.price !== undefined) set.price = String(patch.price);
+  if (patch.stock !== undefined) set.stock = patch.stock;
+  if (patch.description !== undefined) set.description = patch.description;
+  if (patch.longDescription !== undefined) set.longDescription = patch.longDescription;
+  if (patch.brand !== undefined) set.brand = patch.brand;
+  if (patch.status !== undefined) set.status = patch.status;
+  if (patch.images !== undefined) set.images = patch.images;
+  if (patch.specifications !== undefined) set.specifications = patch.specifications;
+  if (patch.attachments !== undefined) set.attachments = patch.attachments;
+
+  const [row] = await db.update(products).set(set).where(eq(products.id, id)).returning();
+  if (!row) throw new AppError(ErrorCodes.PRODUCT_NOT_FOUND, HttpStatusCode.NOT_FOUND);
+  return productToFrontend(row);
+}
+
+export async function deleteProductAdmin(db: Database, id: number) {
+  const [existing] = await db.select().from(products).where(eq(products.id, id)).limit(1);
+  if (!existing) {
+    throw new AppError(ErrorCodes.PRODUCT_NOT_FOUND, HttpStatusCode.NOT_FOUND);
+  }
+  await db.delete(products).where(eq(products.id, id));
+}
+
+export function listOrdersAdmin(db: Database) {
+  return db
+    .select()
+    .from(orders)
+    .orderBy(desc(orders.id))
+    .then((rows) => rows.map(orderToFrontend));
+}
+
+export async function updateOrderStatusAdmin(db: Database, id: number, orderStatus: string) {
+  const [existing] = await db.select().from(orders).where(eq(orders.id, id)).limit(1);
+  if (!existing) {
+    throw new AppError(ErrorCodes.ORDER_NOT_FOUND, HttpStatusCode.NOT_FOUND);
+  }
+  const [row] = await db
+    .update(orders)
+    .set({ orderStatus, updatedAt: new Date() })
+    .where(eq(orders.id, id))
+    .returning();
+  if (!row) throw new AppError(ErrorCodes.ORDER_NOT_FOUND, HttpStatusCode.NOT_FOUND);
+  return orderToFrontend(row);
+}
+
+export function listCustomersAdmin(db: Database) {
+  return db
+    .select()
+    .from(customers)
+    .orderBy(desc(customers.id))
+    .then((rows) => rows.map(customerToFrontend));
+}
+
+export function listConsultationsAdmin(db: Database) {
+  return db
+    .select()
+    .from(consultations)
+    .orderBy(desc(consultations.id))
+    .then((rows) => rows.map(consultationToFrontend));
+}
+
+export async function updateConsultationStatusAdmin(db: Database, id: number, status: string) {
+  const [existing] = await db.select().from(consultations).where(eq(consultations.id, id)).limit(1);
+  if (!existing) {
+    throw new AppError(ErrorCodes.CONSULTATION_NOT_FOUND, HttpStatusCode.NOT_FOUND);
+  }
+  const [row] = await db
+    .update(consultations)
+    .set({ status, updatedAt: new Date() })
+    .where(eq(consultations.id, id))
+    .returning();
+  if (!row) throw new AppError(ErrorCodes.CONSULTATION_NOT_FOUND, HttpStatusCode.NOT_FOUND);
+  return consultationToFrontend(row);
+}
+
+export async function createStoreOrder(
+  db: Database,
+  payload: {
+    name: string;
+    email: string;
+    phone: string;
+    city: string;
+    address: string;
+    notes?: string;
+    payment_method?: string;
+    total_price: number;
+    products: { id?: number; name?: string; quantity?: number; price?: number }[];
+  },
+) {
+  const lines: OrderLineItem[] = (payload.products || []).map((it) => ({
+    productId: typeof it.id === 'number' ? it.id : undefined,
+    name: String(it.name ?? 'Item'),
+    quantity: Number(it.quantity) || 0,
+    price: Number(it.price) || 0,
+  }));
+
+  const [orderRow] = await db
+    .insert(orders)
+    .values({
+      customerName: payload.name.trim(),
+      customerEmail: payload.email.trim().toLowerCase(),
+      customerPhone: payload.phone.trim(),
+      city: payload.city.trim(),
+      address: payload.address.trim(),
+      notes: (payload.notes ?? '').trim(),
+      paymentMethod: payload.payment_method ?? 'cod',
+      totalPrice: String(payload.total_price),
+      products: lines,
+      paymentStatus: 'pending',
+      orderStatus: 'pending',
+    })
+    .returning();
+
+  if (!orderRow) {
+    throw new AppError(ErrorCodes.INTERNAL_SERVER_ERROR, HttpStatusCode.INTERNAL_SERVER_ERROR);
+  }
+
+  await db
+    .insert(customers)
+    .values({
+      name: payload.name.trim(),
+      email: payload.email.trim().toLowerCase(),
+      phone: payload.phone.trim(),
+      city: payload.city.trim(),
+    })
+    .onConflictDoUpdate({
+      target: customers.email,
+      set: {
+        name: payload.name.trim(),
+        phone: payload.phone.trim(),
+        city: payload.city.trim(),
+        updatedAt: new Date(),
+      },
+    });
+
+  for (const line of lines) {
+    if (line.productId && line.quantity > 0) {
+      const [p] = await db.select().from(products).where(eq(products.id, line.productId)).limit(1);
+      if (p) {
+        const newStock = Math.max(0, p.stock - line.quantity);
+        await db
+          .update(products)
+          .set({ stock: newStock, updatedAt: new Date() })
+          .where(eq(products.id, line.productId));
+      }
+    }
+  }
+
+  return orderToFrontend(orderRow);
+}
+
+export async function createConsultationPublic(
+  db: Database,
+  payload: {
+    name: string;
+    phone: string;
+    city: string;
+    monthly_bill?: string;
+    message?: string;
+  },
+) {
+  const [row] = await db
+    .insert(consultations)
+    .values({
+      name: payload.name.trim(),
+      phone: payload.phone.trim(),
+      city: payload.city.trim(),
+      monthlyBill: (payload.monthly_bill ?? '').trim(),
+      message: (payload.message ?? '').trim(),
+      status: 'new',
+    })
+    .returning();
+  if (!row) throw new AppError(ErrorCodes.INTERNAL_SERVER_ERROR, HttpStatusCode.INTERNAL_SERVER_ERROR);
+  return consultationToFrontend(row);
+}
+
+export async function getAnalyticsAdmin(db: Database) {
+  const [orderRows, customerRows, productRows] = await Promise.all([
+    db.select().from(orders),
+    db.select().from(customers),
+    db.select().from(products),
+  ]);
+  return buildAnalytics(orderRows, customerRows.length, productRows.length);
+}

@@ -25,5 +25,7 @@ export function createPostgresFromDatabaseUrl(urlString: string) {
     max: 1,
     prepare: false,
     fetch_types: false,
+    /** Avoid indefinite hangs when the pooler / network is unreachable (esp. local Wrangler). */
+    connect_timeout: 15,
   });
 }

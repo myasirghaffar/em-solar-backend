@@ -37,12 +37,16 @@ export const buildErrorResponse = (
   statusCode: HttpStatusCode,
   rawMessage?: string,
 ): ErrorResponse => {
-  const message = ErrorMessages[errorCode];
+  const defaultMessage = ErrorMessages[errorCode];
+  /** AppError defaults `Error.message` to the code string; never let that override the catalog text. */
+  const trimmed = rawMessage?.trim() ?? '';
+  const useRaw =
+    trimmed.length > 0 && trimmed !== errorCode && trimmed !== defaultMessage;
 
   return {
     success: false,
     code: errorCode,
-    message: rawMessage ?? message,
+    message: useRaw ? trimmed : defaultMessage,
     statusCode,
   };
 };

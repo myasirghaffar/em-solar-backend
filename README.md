@@ -67,19 +67,22 @@ Also confirm the Supabase project is **not paused** (Dashboard → project statu
    npm run db:seed-admin
    ```
 
-5. Run the Worker locally:
+5. Run the API locally (**Node**, same URL as before — avoids Miniflare + Postgres hangs):
 
    ```bash
    npm run dev
    ```
 
-   API: `http://127.0.0.1:8787` (Wrangler default). Try `GET /health`.
+   API: `http://127.0.0.1:8787`. Try `GET /health`.
+
+   For **Worker runtime** parity (bindings, limits), use `npm run dev:wrangler` instead — if login or DB calls hang locally, prefer `npm run dev` (Node) for development.
 
 ## Scripts
 
 | Command | Purpose |
 |---------|---------|
-| `npm run dev` | Local Worker with hot reload (`wrangler dev`) |
+| `npm run dev` | Local API on **Node** (port 8787; reliable Postgres TCP) |
+| `npm run dev:wrangler` | Local **Cloudflare Worker** (`wrangler dev`) |
 | `npm run deploy` | Deploy to Cloudflare |
 | `npm run typecheck` | TypeScript check only |
 | `npm run db:push` | Push Drizzle schema to the database (good for dev) |

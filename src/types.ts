@@ -12,6 +12,17 @@ export interface Env {
   JWT_REFRESH_EXPIRATION?: string;
   /** Comma-separated list of allowed CORS origins. */
   ALLOWED_ORIGINS?: string;
+
+  /** Public site URL for email links (verify email, reset password). No trailing slash. */
+  FRONTEND_APP_URL?: string;
+  /** Resend API key (https://resend.com). */
+  RESEND_API_KEY?: string;
+  /** From address, e.g. `EnergyMart <onboarding@resend.dev>`. */
+  EMAIL_FROM?: string;
+  /** When true and Resend is unset, register/resend may include a dev-only verification URL in JSON. */
+  DEV_EXPOSE_EMAIL_LINKS?: string;
+  /** If set, POST /auth/register-admin requires this exact secret in the JSON body. */
+  ADMIN_INVITE_SECRET?: string;
 }
 
 /** Cloudflare Hyperdrive binding shape. */
