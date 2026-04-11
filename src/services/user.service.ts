@@ -1,0 +1,87 @@
+import { ErrorCodes } from '../common/constants/error-codes';
+import { HttpStatusCode } from '../common/constants/http-status';
+import { UserRole } from '../common/constants/roles.enum';
+import type { Database } from '../db/client';
+import * as usersRepo from '../db/users.repo';
+import type { UserRow } from '../db/schema';
+import { AppError } from '../lib/app-error';
+import { hashPassword } from '../lib/password';
+
+export interface CreateUserInput {
+  name: string;
+  email: string;
+  password: string;
+  role?: UserRole;
+  isActive?: boolean;
+}
+
+export interface UpdateUserInput {
+  name?: string;
+  email?: string;
+  password?: string;
+  role?: UserRole;
+  isActive?: boolean;
+}
+
+export async function createUser(db: Database, input: CreateUserInput): Promise<UserRow> {
+  const existing = await usersRepo.findUserByEmail(db, input.email);
+  if (existing) {
+    throw new AppError(ErrorCodes.USER_ALREADY_EXISTS, HttpStatusCode.CONFLICT);
+  }
+
+  const hashedPassword = await hashPassword(input.password);
+
+  return usersRepo.insertUser(db, {
+    name: input.name,
+    email: input.email,
+    password: hashedPassword,
+    role: input.role ?? UserRole.USER,
+    isActive: input.isActive ?? true,
+  });
+}
+
+export async function findByEmail(db: Database, email: string): Promise<UserRow | null> {
+  return usersRepo.findUserByEmail(db, email);
+}
+
+export async function findById(db: Database, id: string): Promise<UserRow | null> {
+  return usersRepo.findUserById(db, id);
+}
+
+export async function updateUser(
+  db: Database,
+  id: string,
+  dto: UpdateUserInput,
+): Promise<UserRow> {
+  const patch: usersRepo.UserPatch = {};
+
+  if (dto.name !== undefined) {
+    patch.name = dto.name;
+  }
+  if (dto.email !== undefined) {
+    patch.email = dto.email;
+  }
+  if (dto.password !== undefined) {
+    patch.password = await hashPassword(dto.password);
+  }
+  if (dto.role !== undefined) {
+    patch.role = dto.role;
+  }
+  if (dto.isActive !== undefined) {
+    patch.isActive = dto.isActive;
+  }
+
+  const updated = await usersRepo.updateUserById(db, id, patch);
+  if (!updated) {
+    throw new AppError(ErrorCodes.USER_NOT_FOUND, HttpStatusCode.NOT_FOUND);
+  }
+  return updated;
+}
+
+export async function setRefreshTokenHash(
+  db: Database,
+  userId: string,
+  hashedRefresh: string | null,
+): Promise<void> {
+  await usersRepo.updateUserById(db, userId, { refreshToken: hashedRefresh });
+}

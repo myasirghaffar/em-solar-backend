@@ -13,5 +13,7 @@ export const ErrorMessages: Record<ErrorCodes, string> = {
   [ErrorCodes.ACCESS_DENIED]: 'Access denied',
 
   [ErrorCodes.INTERNAL_SERVER_ERROR]: 'Internal server error',
+
+  [ErrorCodes.VALIDATION_FAILED]: 'Validation failed',
 };
 

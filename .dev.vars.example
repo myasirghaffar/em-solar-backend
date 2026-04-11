@@ -1,0 +1,11 @@
+# Copy to .dev.vars (gitignored) for `wrangler dev`.
+# Use the same DATABASE_URL + JWT values as em-solar-backend/.env
+
+DATABASE_URL=postgresql://postgres.PROJECT_REF:ENCODED_PASSWORD@aws-0-REGION.pooler.supabase.com:6543/postgres
+JWT_ACCESS_SECRET=change-me-access-min-32-chars-recommended
+JWT_REFRESH_SECRET=change-me-refresh-different-string
+
+# Optional: for `npm run db:seed-admin` (same keys as .env)
+ADMIN_EMAIL=admin@example.com
+ADMIN_PASSWORD=change-me-min-8-chars
+ADMIN_NAME=Admin

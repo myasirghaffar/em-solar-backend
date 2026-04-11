@@ -1,0 +1,19 @@
+# Cloudflare Workers — set secrets with: wrangler secret put JWT_ACCESS_SECRET (etc.)
+# Postgres: use Hyperdrive in production (recommended) or DATABASE_URL for Neon/Supabase pooler.
+# See: https://developers.cloudflare.com/hyperdrive/
+
+name = "em-solar-api"
+main = "src/index.ts"
+compatibility_date = "2025-04-01"
+compatibility_flags = ["nodejs_compat"]
+
+[vars]
+JWT_ACCESS_EXPIRATION = "15m"
+JWT_REFRESH_EXPIRATION = "7d"
+# Comma-separated origins for browser clients (e.g. your Cloudflare Pages URL)
+ALLOWED_ORIGINS = "http://localhost:5173"
+
+# Uncomment after creating a Hyperdrive config in the dashboard and paste its id:
+# [[hyperdrive]]
+# binding = "HYPERDRIVE"
+# id = "your-hyperdrive-config-id"

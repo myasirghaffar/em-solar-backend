@@ -1,34 +1,24 @@
 {
   "compilerOptions": {
-    "module": "commonjs",
-    "declaration": true,
-    "removeComments": true,
-    "emitDecoratorMetadata": true,
-    "experimentalDecorators": true,
-    "allowSyntheticDefaultImports": true,
-    "target": "ES2021",
-    "sourceMap": true,
-    "outDir": "./dist",
-    "baseUrl": "./",
-    "incremental": true,
+    "target": "ES2022",
+    "module": "ESNext",
+    "moduleResolution": "bundler",
+    "lib": ["ES2022"],
     "strict": true,
-    "noImplicitAny": true,
-    "strictNullChecks": true,
-    "strictBindCallApply": true,
-    "strictFunctionTypes": true,
-    "noImplicitThis": true,
-    "alwaysStrict": true,
+    "skipLibCheck": true,
+    "noEmit": true,
+    "types": ["@cloudflare/workers-types", "@types/node"],
+    "resolveJsonModule": true,
+    "isolatedModules": true,
+    "verbatimModuleSyntax": true,
     "noUnusedLocals": true,
     "noUnusedParameters": true,
     "noFallthroughCasesInSwitch": true,
-    "moduleResolution": "node",
-    "resolveJsonModule": true,
-    "esModuleInterop": true,
-    "types": ["node", "reflect-metadata"],
+    "baseUrl": ".",
     "paths": {
       "@src/*": ["src/*"]
     }
   },
-  "include": ["src/**/*"],
-  "exclude": ["node_modules", "dist", "src/database/**/*.cjs", "src/database/**/*.js"]
+  "include": ["src/**/*.ts", "drizzle.config.ts"],
+  "exclude": ["node_modules"]
 }
