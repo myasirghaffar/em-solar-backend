@@ -8,6 +8,7 @@ import { HttpStatusCode } from './common/constants/http-status';
 import { AppError } from './lib/app-error';
 import { buildErrorResponse } from './lib/responses';
 import type { AppBindings, AppVariables } from './middleware/auth';
+import { mapDatabaseFaultFromChain } from './lib/map-database-fault';
 import { buildStatusDashboardHtml, getApiBootMs } from './lib/status-dashboard';
 import { adminStoreRoutes } from './routes/admin-store.routes';
 import { authRoutes } from './routes/auth.routes';
@@ -87,6 +88,15 @@ app.onError((err, c) => {
     return c.json(
       buildErrorResponse(ErrorCodes.VALIDATION_FAILED, HttpStatusCode.BAD_REQUEST, first),
       HttpStatusCode.BAD_REQUEST as ContentfulStatusCode,
+    );
+  }
+
+  const dbFault = mapDatabaseFaultFromChain(err);
+  if (dbFault) {
+    console.error('[database]', dbFault.logLabel, err);
+    return c.json(
+      buildErrorResponse(dbFault.code, dbFault.statusCode),
+      dbFault.statusCode as ContentfulStatusCode,
     );
   }
 

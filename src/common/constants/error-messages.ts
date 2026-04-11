@@ -29,6 +29,9 @@ export const ErrorMessages: Record<ErrorCodes, string> = {
   [ErrorCodes.DATABASE_NOT_CONFIGURED]:
     'The API cannot reach the database. The operator must set DATABASE_URL (wrangler secret) or Hyperdrive on the Worker.',
 
+  [ErrorCodes.DATABASE_UNAVAILABLE]:
+    'The database is not available from this deployment. Check DATABASE_URL, pooler settings, run migrations, and Worker logs.',
+
   [ErrorCodes.VALIDATION_FAILED]: 'Some of the information you entered is not valid. Please check and try again.',
 
   [ErrorCodes.PRODUCT_NOT_FOUND]: 'That product could not be found.',

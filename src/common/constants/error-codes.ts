@@ -21,6 +21,9 @@ export enum ErrorCodes {
   /** Worker / API missing DATABASE_URL or Hyperdrive — cannot reach Postgres. */
   DATABASE_NOT_CONFIGURED = 'DATABASE_NOT_CONFIGURED',
 
+  /** DATABASE_URL set but Postgres unreachable, auth failed, or schema/tables missing. */
+  DATABASE_UNAVAILABLE = 'DATABASE_UNAVAILABLE',
+
   VALIDATION_FAILED = 'VALIDATION_FAILED',
 
   PRODUCT_NOT_FOUND = 'PRODUCT_NOT_FOUND',
