@@ -1,6 +1,13 @@
 # Cloudflare Workers — set secrets with: wrangler secret put JWT_ACCESS_SECRET (etc.)
 # Postgres: use Hyperdrive in production (recommended) or DATABASE_URL for Neon/Supabase pooler.
 # See: https://developers.cloudflare.com/hyperdrive/
+#
+# If API fetch() from the browser gets 302 → cloudflareaccess.com/login: Zero Trust (Access) is
+# protecting this hostname. Remove that app, or add a Bypass policy for public API paths — Access
+# is separate from DATABASE_URL / JWT; it blocks requests before they reach the Worker.
+#
+# Do not add VITE_API_URL here — that is a frontend *build-time* variable (Vite). The API Worker
+# never reads it. Set VITE_API_URL on the platform that runs `vite build` for em-solar (Pages, etc.).
 
 name = "em-solar-api"
 main = "src/index.ts"
