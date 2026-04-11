@@ -23,6 +23,17 @@ export interface Env {
   DEV_EXPOSE_EMAIL_LINKS?: string;
   /** If set, POST /auth/register-admin requires this exact secret in the JSON body. */
   ADMIN_INVITE_SECRET?: string;
+
+  /** Shown on HTML status page (`/`, `/status`). Examples: `development`, `production`. */
+  ENVIRONMENT?: string;
+  /** ISO 8601 timestamp of last deploy (set in CI / wrangler). */
+  DEPLOYED_AT?: string;
+  /** Alias for `DEPLOYED_AT` in some pipelines. */
+  BUILD_TIME?: string;
+  /** Full git SHA for status page “last merge”. */
+  GIT_COMMIT?: string;
+  /** Short SHA (optional; otherwise first 7 of `GIT_COMMIT`). */
+  GIT_COMMIT_SHORT?: string;
 }
 
 /** Cloudflare Hyperdrive binding shape. */

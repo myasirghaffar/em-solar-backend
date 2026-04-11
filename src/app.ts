@@ -1,4 +1,5 @@
 import { Hono } from 'hono';
+import type { Context } from 'hono';
 import type { ContentfulStatusCode } from 'hono/utils/http-status';
 import { cors } from 'hono/cors';
 import { ZodError } from 'zod';
@@ -7,6 +8,7 @@ import { HttpStatusCode } from './common/constants/http-status';
 import { AppError } from './lib/app-error';
 import { buildErrorResponse } from './lib/responses';
 import type { AppBindings, AppVariables } from './middleware/auth';
+import { buildStatusDashboardHtml } from './lib/status-dashboard';
 import { adminStoreRoutes } from './routes/admin-store.routes';
 import { authRoutes } from './routes/auth.routes';
 import { storeRoutes } from './routes/store.routes';
@@ -40,12 +42,24 @@ app.use(
   }),
 );
 
-app.get('/', (c) =>
-  c.json({
+function wantsHtml(c: Context<{ Bindings: AppBindings; Variables: AppVariables }>): boolean {
+  const q = c.req.query('format');
+  if (q === 'json') return false;
+  const accept = c.req.header('Accept') ?? '';
+  return accept.includes('text/html');
+}
+
+app.get('/', (c) => {
+  if (wantsHtml(c)) {
+    return c.html(buildStatusDashboardHtml(c.env));
+  }
+  return c.json({
     name: 'em-solar-api',
     ok: true,
-  }),
-);
+  });
+});
+
+app.get('/status', (c) => c.html(buildStatusDashboardHtml(c.env)));
 
 app.get('/health', (c) => c.json({ ok: true }));
 

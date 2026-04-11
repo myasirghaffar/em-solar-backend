@@ -32,6 +32,11 @@ function buildEnv(): Env {
     EMAIL_FROM: process.env.EMAIL_FROM,
     DEV_EXPOSE_EMAIL_LINKS: process.env.DEV_EXPOSE_EMAIL_LINKS,
     ADMIN_INVITE_SECRET: process.env.ADMIN_INVITE_SECRET,
+    ENVIRONMENT: process.env.ENVIRONMENT,
+    DEPLOYED_AT: process.env.DEPLOYED_AT,
+    BUILD_TIME: process.env.BUILD_TIME,
+    GIT_COMMIT: process.env.GIT_COMMIT,
+    GIT_COMMIT_SHORT: process.env.GIT_COMMIT_SHORT,
   };
 }
 
