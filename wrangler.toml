@@ -10,8 +10,8 @@ compatibility_flags = ["nodejs_compat"]
 [vars]
 JWT_ACCESS_EXPIRATION = "15m"
 JWT_REFRESH_EXPIRATION = "7d"
-# Comma-separated origins for browser clients (e.g. your Cloudflare Pages URL)
-ALLOWED_ORIGINS = "http://localhost:5173,https://energymart-pk.vercel.app"
+# Comma-separated origins (exact match, no trailing slash). Add every frontend host that calls this API.
+ALLOWED_ORIGINS = "http://localhost:5173,https://energymart-pk.vercel.app,https://em-solar.ghaffaryasir28.workers.dev"
 # Shown on HTML status dashboard (/, /status). Override DEPLOYED_AT / GIT_* per deploy in dashboard or CI.
 ENVIRONMENT = "production"
 

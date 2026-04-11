@@ -26,6 +26,9 @@ export const ErrorMessages: Record<ErrorCodes, string> = {
 
   [ErrorCodes.INTERNAL_SERVER_ERROR]: 'Something went wrong on our side. Please try again shortly.',
 
+  [ErrorCodes.DATABASE_NOT_CONFIGURED]:
+    'The API cannot reach the database. The operator must set DATABASE_URL (wrangler secret) or Hyperdrive on the Worker.',
+
   [ErrorCodes.VALIDATION_FAILED]: 'Some of the information you entered is not valid. Please check and try again.',
 
   [ErrorCodes.PRODUCT_NOT_FOUND]: 'That product could not be found.',

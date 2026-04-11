@@ -1,4 +1,7 @@
 import { drizzle } from 'drizzle-orm/postgres-js';
+import { ErrorCodes } from '../common/constants/error-codes';
+import { HttpStatusCode } from '../common/constants/http-status';
+import { AppError } from '../lib/app-error';
 import { createPostgresFromDatabaseUrl } from '../lib/postgres-from-env-url';
 import type { Env } from '../types';
 import * as schema from './schema';
@@ -12,10 +15,10 @@ export function getConnectionString(env: Env): string {
   if (fromHyperdrive) {
     return fromHyperdrive;
   }
-  if (env.DATABASE_URL) {
+  if (env.DATABASE_URL?.trim()) {
     return env.DATABASE_URL.trim();
   }
-  throw new Error('Set DATABASE_URL (e.g. in .dev.vars) or configure a Hyperdrive binding.');
+  throw new AppError(ErrorCodes.DATABASE_NOT_CONFIGURED, HttpStatusCode.SERVICE_UNAVAILABLE);
 }
 
 /**
