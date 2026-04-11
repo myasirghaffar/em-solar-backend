@@ -1,7 +1,21 @@
 import type { Env } from '../types';
 
-/** Wall-clock time when this isolate / process loaded (resets on Worker cold start). */
-export const API_BOOT_AT_MS = Date.now();
+const BOOT_KEY = '__emSolarApiBootMs';
+
+/**
+ * First request in this isolate sets boot time (avoids bogus multi-year "uptime" when
+ * bundlers freeze top-level `Date.now()` at build time on Workers).
+ */
+export function getApiBootMs(): number {
+  const g = globalThis as typeof globalThis & { [BOOT_KEY]?: number };
+  const existing = g[BOOT_KEY];
+  if (typeof existing === 'number' && Number.isFinite(existing) && existing > 1_000_000_000_000) {
+    return existing;
+  }
+  const t = Date.now();
+  g[BOOT_KEY] = t;
+  return t;
+}
 
 type RouteRow = { method: string; path: string };
 
@@ -57,24 +71,17 @@ function formatUptime(ms: number): string {
   return `${h}h ${m}m ${s}s`;
 }
 
-function nodeVersion(): string {
+function runtimeVersionLine(env: Env): { label: string; value: string } {
   try {
     const v = typeof process !== 'undefined' ? process.versions?.node : undefined;
-    return v ? `v${v}` : '—';
-  } catch {
-    return '—';
-  }
-}
-
-function runtimeLabel(): string {
-  try {
-    if (typeof process !== 'undefined' && process.release?.name === 'node') {
-      return 'Node.js';
+    if (v) {
+      return { label: 'Node.js', value: `v${v}` };
     }
   } catch {
     /* ignore */
   }
-  return 'Cloudflare Workers';
+  const compat = env.WORKER_COMPAT_DATE?.trim() || '2025-04-01';
+  return { label: 'Cloudflare Workers', value: `compat ${compat}` };
 }
 
 function methodClass(method: string): string {
@@ -114,13 +121,15 @@ function deployFooterHtml(env: Env): string {
 export function buildStatusDashboardHtml(env: Env): string {
   const now = new Date();
   const nowIso = now.toISOString();
-  const uptimeMs = Date.now() - API_BOOT_AT_MS;
+  const boot = getApiBootMs();
+  const uptimeMs = Math.max(0, Date.now() - boot);
   const envName =
     env.ENVIRONMENT?.trim() ||
     (typeof process !== 'undefined' ? process.env.NODE_ENV : undefined)?.trim() ||
     'production';
   const status = 'Operational';
   const deployHtml = deployFooterHtml(env);
+  const rt = runtimeVersionLine(env);
 
   const routesHtml = STATUS_ROUTE_MANIFEST.map(
     (r) =>
@@ -287,8 +296,8 @@ export function buildStatusDashboardHtml(env: Env): string {
       <div class="val">${escapeHtml(envName)}</div>
     </div>
     <div class="card">
-      <label>${escapeHtml(runtimeLabel())}</label>
-      <div class="val mono">${escapeHtml(nodeVersion())}</div>
+      <label>${escapeHtml(rt.label)}</label>
+      <div class="val mono">${escapeHtml(rt.value)}</div>
     </div>
   </div>
 

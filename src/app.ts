@@ -8,13 +8,19 @@ import { HttpStatusCode } from './common/constants/http-status';
 import { AppError } from './lib/app-error';
 import { buildErrorResponse } from './lib/responses';
 import type { AppBindings, AppVariables } from './middleware/auth';
-import { buildStatusDashboardHtml } from './lib/status-dashboard';
+import { buildStatusDashboardHtml, getApiBootMs } from './lib/status-dashboard';
 import { adminStoreRoutes } from './routes/admin-store.routes';
 import { authRoutes } from './routes/auth.routes';
 import { storeRoutes } from './routes/store.routes';
 import { usersRoutes } from './routes/users.routes';
 
 const app = new Hono<{ Bindings: AppBindings; Variables: AppVariables }>();
+
+/** Record isolate boot on first request (correct uptime on status page; see status-dashboard). */
+app.use('*', async (_c, next) => {
+  getApiBootMs();
+  await next();
+});
 
 app.use(
   '*',

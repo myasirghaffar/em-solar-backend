@@ -34,6 +34,9 @@ export interface Env {
   GIT_COMMIT?: string;
   /** Short SHA (optional; otherwise first 7 of `GIT_COMMIT`). */
   GIT_COMMIT_SHORT?: string;
+
+  /** Shown on status page for Workers (match `compatibility_date` in wrangler.toml when you bump it). */
+  WORKER_COMPAT_DATE?: string;
 }
 
 /** Cloudflare Hyperdrive binding shape. */

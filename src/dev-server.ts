@@ -37,6 +37,7 @@ function buildEnv(): Env {
     BUILD_TIME: process.env.BUILD_TIME,
     GIT_COMMIT: process.env.GIT_COMMIT,
     GIT_COMMIT_SHORT: process.env.GIT_COMMIT_SHORT,
+    WORKER_COMPAT_DATE: process.env.WORKER_COMPAT_DATE,
   };
 }
 
