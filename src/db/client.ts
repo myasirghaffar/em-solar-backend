@@ -10,6 +10,15 @@ export type Database = ReturnType<typeof createDb>;
 
 const clients = new Map<string, ReturnType<typeof createPostgresFromDatabaseUrl>>();
 
+function isHyperdriveUrl(url: string): boolean {
+  try {
+    const host = new URL(url).hostname;
+    return host.endsWith('.hyperdrive.local');
+  } catch {
+    return false;
+  }
+}
+
 export function getConnectionString(env: Env): string {
   const fromHyperdrive = env.HYPERDRIVE?.connectionString;
   if (fromHyperdrive) {
@@ -26,6 +35,15 @@ export function getConnectionString(env: Env): string {
  */
 export function createDb(env: Env) {
   const url = getConnectionString(env);
+  /**
+   * Hyperdrive connection handles can be request-scoped in Workers.
+   * Reusing a client across requests can throw:
+   * "Cannot perform I/O on behalf of a different request".
+   */
+  if (isHyperdriveUrl(url)) {
+    return drizzle(createPostgresFromDatabaseUrl(url), { schema });
+  }
+
   let sql = clients.get(url);
   if (!sql) {
     sql = createPostgresFromDatabaseUrl(url);
