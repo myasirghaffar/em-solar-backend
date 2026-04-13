@@ -15,7 +15,7 @@ compatibility_date = "2025-04-01"
 compatibility_flags = ["nodejs_compat"]
 
 [observability]
-enabled = true
+enabled = false
 head_sampling_rate = 1
 
 [observability.logs]

@@ -14,6 +14,7 @@ export function createPostgresFromDatabaseUrl(urlString: string) {
   const host = parsed.hostname;
   const port = parsed.port ? Number(parsed.port) : 5432;
   const database = parsed.pathname.replace(/^\//, '') || 'postgres';
+  const isHyperdriveHost = host.endsWith('.hyperdrive.local');
 
   return postgres({
     host,
@@ -21,7 +22,12 @@ export function createPostgresFromDatabaseUrl(urlString: string) {
     database,
     user,
     password,
-    ssl: { rejectUnauthorized: false },
+    /**
+     * Hyperdrive endpoints are internal worker transport and should not use
+     * TLS at the postgres.js layer. Direct Supabase/Neon connections still
+     * keep TLS enabled.
+     */
+    ssl: isHyperdriveHost ? false : { rejectUnauthorized: false },
     max: 1,
     prepare: false,
     fetch_types: false,

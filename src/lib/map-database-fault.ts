@@ -25,10 +25,10 @@ export function mapDatabaseFaultFromChain(err: unknown): DatabaseFaultInfo | nul
 }
 
 function mapDatabaseFault(err: unknown): DatabaseFaultInfo | null {
-  if (!err || typeof err !== 'object') return null;
-  const e = err as { code?: unknown; message?: unknown; name?: unknown };
+  if (!err) return null;
+  const e = (typeof err === 'object' ? err : {}) as { code?: unknown; message?: unknown; name?: unknown };
   const code = typeof e.code === 'string' ? e.code : '';
-  const msg = typeof e.message === 'string' ? e.message : '';
+  const msg = typeof e.message === 'string' ? e.message : typeof err === 'string' ? err : '';
   const name = typeof e.name === 'string' ? e.name : '';
 
   if (code === 'ECONNREFUSED' || code === 'ENOTFOUND' || code === 'ETIMEDOUT') {
@@ -48,6 +48,26 @@ function mapDatabaseFault(err: unknown): DatabaseFaultInfo | null {
   }
 
   const lower = msg.toLowerCase();
+  if (lower.includes('connect_timeout')) {
+    return {
+      code: ErrorCodes.DATABASE_UNAVAILABLE,
+      statusCode: HttpStatusCode.SERVICE_UNAVAILABLE,
+      logLabel: 'network:CONNECT_TIMEOUT',
+    };
+  }
+
+  if (
+    lower.includes('too many subrequests by single worker invocation') ||
+    lower.includes("worker's code had hung") ||
+    lower.includes('would never generate a response')
+  ) {
+    return {
+      code: ErrorCodes.DATABASE_UNAVAILABLE,
+      statusCode: HttpStatusCode.SERVICE_UNAVAILABLE,
+      logLabel: 'workers:runtime_limit',
+    };
+  }
+
   if (
     lower.includes('postgres') &&
     (lower.includes('connect') || lower.includes('econn') || lower.includes('timeout'))
