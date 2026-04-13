@@ -14,6 +14,21 @@ main = "src/index.ts"
 compatibility_date = "2025-04-01"
 compatibility_flags = ["nodejs_compat"]
 
+[observability]
+enabled = true
+head_sampling_rate = 1
+
+[observability.logs]
+enabled = true
+head_sampling_rate = 1
+persist = true
+invocation_logs = true
+
+[observability.traces]
+enabled = false
+persist = true
+head_sampling_rate = 1
+
 [vars]
 JWT_ACCESS_EXPIRATION = "15m"
 JWT_REFRESH_EXPIRATION = "7d"
@@ -24,7 +39,8 @@ ENVIRONMENT = "production"
 # Status page “Cloudflare Workers” card — bump when you change compatibility_date above.
 WORKER_COMPAT_DATE = "2025-04-01"
 
-# Uncomment after creating a Hyperdrive config in the dashboard and paste its id:
-# [[hyperdrive]]
-# binding = "HYPERDRIVE"
-# id = "your-hyperdrive-config-id"
+[[hyperdrive]]
+binding = "HYPERDRIVE"
+id = "03968b8e83ee42ceb48cd26123a80f3d"
+# Optional for local `wrangler dev` only:
+# localConnectionString = "postgresql://user:pass@localhost:5432/postgres"
