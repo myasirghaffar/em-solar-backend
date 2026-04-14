@@ -39,6 +39,17 @@ storeRoutes.post('/orders', zValidator('json', storeOrderCreateSchema), async (c
   return c.json(buildSuccessResponse(data), HttpStatusCode.CREATED);
 });
 
+storeRoutes.get('/orders', (c) => {
+  return c.json(
+    buildErrorResponse(
+      ErrorCodes.VALIDATION_FAILED,
+      HttpStatusCode.METHOD_NOT_ALLOWED,
+      'Method not allowed. Use POST /store/orders to create an order.',
+    ),
+    HttpStatusCode.METHOD_NOT_ALLOWED,
+  );
+});
+
 storeRoutes.post(
   '/consultations',
   zValidator('json', consultationCreateSchema),
