@@ -17,6 +17,39 @@ import { usersRoutes } from './routes/users.routes';
 
 const app = new Hono<{ Bindings: AppBindings; Variables: AppVariables }>();
 
+type RouteMethodHint = { pattern: RegExp; allowed: string[]; template: string };
+
+const routeMethodHints: RouteMethodHint[] = [
+  { pattern: /^\/auth\/register$/, allowed: ['POST'], template: '/auth/register' },
+  { pattern: /^\/auth\/register-admin$/, allowed: ['POST'], template: '/auth/register-admin' },
+  { pattern: /^\/auth\/verify-email$/, allowed: ['POST'], template: '/auth/verify-email' },
+  { pattern: /^\/auth\/resend-verification$/, allowed: ['POST'], template: '/auth/resend-verification' },
+  { pattern: /^\/auth\/login$/, allowed: ['POST'], template: '/auth/login' },
+  { pattern: /^\/auth\/logout$/, allowed: ['POST'], template: '/auth/logout' },
+  { pattern: /^\/auth\/refresh$/, allowed: ['POST'], template: '/auth/refresh' },
+  { pattern: /^\/auth\/forgot-password$/, allowed: ['POST'], template: '/auth/forgot-password' },
+  { pattern: /^\/auth\/reset-password$/, allowed: ['POST'], template: '/auth/reset-password' },
+
+  { pattern: /^\/users\/me$/, allowed: ['GET'], template: '/users/me' },
+  { pattern: /^\/users\/me\/orders$/, allowed: ['GET'], template: '/users/me/orders' },
+  { pattern: /^\/users\/me\/customer$/, allowed: ['GET'], template: '/users/me/customer' },
+  { pattern: /^\/users\/[^/]+$/, allowed: ['GET', 'PATCH'], template: '/users/:id' },
+
+  { pattern: /^\/store\/products$/, allowed: ['GET'], template: '/store/products' },
+  { pattern: /^\/store\/products\/[^/]+$/, allowed: ['GET'], template: '/store/products/:id' },
+  { pattern: /^\/store\/orders$/, allowed: ['POST'], template: '/store/orders' },
+  { pattern: /^\/store\/consultations$/, allowed: ['POST'], template: '/store/consultations' },
+
+  { pattern: /^\/admin\/products$/, allowed: ['GET', 'POST'], template: '/admin/products' },
+  { pattern: /^\/admin\/products\/[^/]+$/, allowed: ['PATCH', 'PUT', 'DELETE'], template: '/admin/products/:id' },
+  { pattern: /^\/admin\/orders$/, allowed: ['GET'], template: '/admin/orders' },
+  { pattern: /^\/admin\/orders\/[^/]+$/, allowed: ['PATCH'], template: '/admin/orders/:id' },
+  { pattern: /^\/admin\/customers$/, allowed: ['GET'], template: '/admin/customers' },
+  { pattern: /^\/admin\/consultations$/, allowed: ['GET'], template: '/admin/consultations' },
+  { pattern: /^\/admin\/consultations\/[^/]+$/, allowed: ['PATCH'], template: '/admin/consultations/:id' },
+  { pattern: /^\/admin\/analytics$/, allowed: ['GET'], template: '/admin/analytics' },
+];
+
 /** Record isolate boot on first request (correct uptime on status page; see status-dashboard). */
 app.use('*', async (_c, next) => {
   getApiBootMs();
@@ -74,6 +107,32 @@ app.route('/auth', authRoutes);
 app.route('/users', usersRoutes);
 app.route('/store', storeRoutes);
 app.route('/admin', adminStoreRoutes);
+
+app.notFound((c) => {
+  const path = c.req.path;
+  const method = c.req.method.toUpperCase();
+  const hinted = routeMethodHints.find((h) => h.pattern.test(path));
+
+  if (hinted && !hinted.allowed.includes(method)) {
+    return c.json(
+      buildErrorResponse(
+        ErrorCodes.VALIDATION_FAILED,
+        HttpStatusCode.METHOD_NOT_ALLOWED,
+        `Method ${method} not allowed for ${hinted.template}. Allowed: ${hinted.allowed.join(', ')}.`,
+      ),
+      HttpStatusCode.METHOD_NOT_ALLOWED as ContentfulStatusCode,
+    );
+  }
+
+  return c.json(
+    buildErrorResponse(
+      ErrorCodes.VALIDATION_FAILED,
+      HttpStatusCode.NOT_FOUND,
+      `Route not found: ${method} ${path}`,
+    ),
+    HttpStatusCode.NOT_FOUND as ContentfulStatusCode,
+  );
+});
 
 app.onError((err, c) => {
   if (err instanceof AppError) {
