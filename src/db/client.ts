@@ -20,12 +20,12 @@ function isHyperdriveUrl(url: string): boolean {
 }
 
 export function getConnectionString(env: Env): string {
+  if (env.DATABASE_URL?.trim()) {
+    return env.DATABASE_URL.trim();
+  }
   const fromHyperdrive = env.HYPERDRIVE?.connectionString;
   if (fromHyperdrive) {
     return fromHyperdrive;
-  }
-  if (env.DATABASE_URL?.trim()) {
-    return env.DATABASE_URL.trim();
   }
   throw new AppError(ErrorCodes.DATABASE_NOT_CONFIGURED, HttpStatusCode.SERVICE_UNAVAILABLE);
 }

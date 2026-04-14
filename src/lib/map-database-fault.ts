@@ -56,6 +56,14 @@ function mapDatabaseFault(err: unknown): DatabaseFaultInfo | null {
     };
   }
 
+  if (lower.includes('network connection lost')) {
+    return {
+      code: ErrorCodes.DATABASE_UNAVAILABLE,
+      statusCode: HttpStatusCode.SERVICE_UNAVAILABLE,
+      logLabel: 'network:connection_lost',
+    };
+  }
+
   if (
     lower.includes('too many subrequests by single worker invocation') ||
     lower.includes("worker's code had hung") ||
