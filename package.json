@@ -4,6 +4,7 @@
   "private": true,
   "description": "EM Solar API on Cloudflare Workers (Hono + Drizzle + PostgreSQL)",
   "scripts": {
+    "start": "tsx src/dev-server.ts",
     "dev": "tsx src/dev-server.ts",
     "dev:wrangler": "wrangler dev",
     "deploy": "wrangler deploy",

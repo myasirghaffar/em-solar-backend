@@ -93,6 +93,23 @@ Also confirm the Supabase project is **not paused** (Dashboard → project statu
 | `npm run db:reset-schema` | Drop `users` + `enum_users_role` (then run `db:push`) |
 | `npm run db:wipe-all` | Drop and recreate entire **`public`** schema (all tables/data; then run `db:push`) |
 
+## Deploy to Railway (Node server)
+
+This repo already includes a Node entrypoint (`src/dev-server.ts`) that runs the same Hono app outside the Workers runtime. Railway can run it directly.
+
+1. Create a new Railway project and connect this repo (or the `em-solar-backend` folder if you are using a monorepo setup).
+2. Set these Railway **Environment Variables** (minimum):
+   - `DATABASE_URL` (Supabase Postgres URI; **pooler** is recommended)
+   - `JWT_ACCESS_SECRET`
+   - `JWT_REFRESH_SECRET`
+3. Set CORS origins (recommended):
+   - `ALLOWED_ORIGINS` = comma-separated list of exact frontend origins (no trailing slash)
+4. Deploy. Railway will provide `PORT` automatically; the server binds to `0.0.0.0:$PORT`.
+
+After deploy, verify:
+- `GET /health`
+- `GET /store/products`
+
 When **`db:push` fails with circuit breaker**, apply schema via **Supabase → SQL Editor** using [`scripts/apply-api-schema.sql`](scripts/apply-api-schema.sql) (no pooler CLI connection required).
 
 ## API overview

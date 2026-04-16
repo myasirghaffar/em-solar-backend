@@ -43,13 +43,16 @@ function buildEnv(): Env {
 
 const env = buildEnv();
 const port = Number(process.env.PORT) || 8787;
+const hostname = process.env.HOST?.trim() || '0.0.0.0';
 
 serve({
+  hostname,
   port,
   fetch: (req) => app.fetch(req, env),
 });
 
-console.info(`em-solar-api (Node) http://localhost:${port} — using .env / .dev.vars`);
+const hostForLog = hostname === '0.0.0.0' ? 'localhost' : hostname;
+console.info(`em-solar-api (Node) http://${hostForLog}:${port} — using .env / .dev.vars`);
 if (!process.env.RESEND_API_KEY?.trim() || !process.env.EMAIL_FROM?.trim()) {
   console.info(
     '[email] RESEND_API_KEY + EMAIL_FROM are not both set — verification emails are not sent; register/forgot responses include a "devVerificationUrl" / "devResetUrl" link instead.',
