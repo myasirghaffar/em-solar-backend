@@ -5,7 +5,13 @@ import { normalizeDatabaseUrl } from './normalize-database-url';
  * Build a postgres.js client from DATABASE_URL without mis-parsing special
  * characters in passwords (use URL decoding instead of relying on the URI alone).
  */
-export function createPostgresFromDatabaseUrl(urlString: string) {
+export function createPostgresFromDatabaseUrl(
+  urlString: string,
+  opts?: {
+    /** postgres.js pool max (Workers should be 1). */
+    max?: number;
+  },
+) {
   const normalized = normalizeDatabaseUrl(urlString);
   const parsed = new URL(normalized);
 
@@ -15,6 +21,7 @@ export function createPostgresFromDatabaseUrl(urlString: string) {
   const port = parsed.port ? Number(parsed.port) : 5432;
   const database = parsed.pathname.replace(/^\//, '') || 'postgres';
   const isHyperdriveHost = host.endsWith('.hyperdrive.local');
+  const max = typeof opts?.max === 'number' && Number.isFinite(opts.max) ? opts.max : 1;
 
   return postgres({
     host,
@@ -28,7 +35,7 @@ export function createPostgresFromDatabaseUrl(urlString: string) {
      * keep TLS enabled.
      */
     ssl: isHyperdriveHost ? false : { rejectUnauthorized: false },
-    max: 1,
+    max: isHyperdriveHost ? 1 : max,
     prepare: false,
     fetch_types: false,
     /** Avoid indefinite hangs when the pooler / network is unreachable (esp. local Wrangler). */

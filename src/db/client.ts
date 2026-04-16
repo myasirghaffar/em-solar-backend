@@ -19,6 +19,13 @@ function isHyperdriveUrl(url: string): boolean {
   }
 }
 
+function parsePoolMax(env: Env): number {
+  const raw = (env.DB_POOL_MAX ?? '').trim();
+  const n = raw ? Number(raw) : NaN;
+  if (Number.isFinite(n) && n >= 1 && n <= 50) return Math.floor(n);
+  return 10;
+}
+
 export function getConnectionString(env: Env): string {
   if (env.DATABASE_URL?.trim()) {
     return env.DATABASE_URL.trim();
@@ -44,10 +51,16 @@ export function createDb(env: Env) {
     return drizzle(createPostgresFromDatabaseUrl(url), { schema });
   }
 
-  let sql = clients.get(url);
+  // Cloudflare Workers should keep max=1. Node (Railway) can safely use a small pool
+  // so concurrent dashboard requests don't queue behind a single connection.
+  const isNode = (env.IS_NODE_SERVER ?? '').toLowerCase() === 'true';
+  const poolMax = isNode ? parsePoolMax(env) : 1;
+  const cacheKey = `${url}::max=${poolMax}`;
+
+  let sql = clients.get(cacheKey);
   if (!sql) {
-    sql = createPostgresFromDatabaseUrl(url);
-    clients.set(url, sql);
+    sql = createPostgresFromDatabaseUrl(url, { max: poolMax });
+    clients.set(cacheKey, sql);
   }
   return drizzle(sql, { schema });
 }

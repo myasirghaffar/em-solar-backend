@@ -18,6 +18,30 @@ export const adminStoreRoutes = new Hono<{ Bindings: AppBindings; Variables: App
 adminStoreRoutes.use('*', requireAuth);
 adminStoreRoutes.use('*', requireAdmin);
 
+/**
+ * Admin UI bootstrap: fetch everything the admin dashboard commonly needs in one request.
+ * This reduces request waterfalls / browser connection contention vs 4–5 separate calls.
+ */
+adminStoreRoutes.get('/bootstrap', async (c) => {
+  const db = createDb(c.env);
+  const [products, orders, customers, consultations, analytics] = await Promise.all([
+    catalog.listProductsAdmin(db),
+    catalog.listOrdersAdmin(db),
+    catalog.listCustomersAdmin(db),
+    catalog.listConsultationsAdmin(db),
+    catalog.getAnalyticsAdmin(db),
+  ]);
+  return c.json(
+    buildSuccessResponse({
+      products,
+      orders,
+      customers,
+      consultations,
+      analytics,
+    }),
+  );
+});
+
 adminStoreRoutes.get('/products', async (c) => {
   const db = createDb(c.env);
   const data = await catalog.listProductsAdmin(db);

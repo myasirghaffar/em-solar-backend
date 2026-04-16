@@ -37,6 +37,14 @@ export interface Env {
 
   /** Shown on status page for Workers (match `compatibility_date` in wrangler.toml when you bump it). */
   WORKER_COMPAT_DATE?: string;
+
+  /**
+   * When running the same Hono app on Node (Railway/local `npm start`), we can safely use a small
+   * Postgres connection pool. In Workers, keep pool size at 1.
+   */
+  IS_NODE_SERVER?: string;
+  /** Optional override for Node Postgres pool size (default: 10). */
+  DB_POOL_MAX?: string;
 }
 
 /** Cloudflare Hyperdrive binding shape. */

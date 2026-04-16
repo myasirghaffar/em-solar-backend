@@ -22,6 +22,8 @@ function buildEnv(): Env {
 
   return {
     DATABASE_URL: databaseUrl,
+    IS_NODE_SERVER: 'true',
+    DB_POOL_MAX: process.env.DB_POOL_MAX,
     JWT_ACCESS_SECRET: access,
     JWT_REFRESH_SECRET: refresh,
     JWT_ACCESS_EXPIRATION: process.env.JWT_ACCESS_EXPIRATION,

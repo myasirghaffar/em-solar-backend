@@ -45,6 +45,8 @@ function coerceIsoTimestamp(v: unknown): string {
     const d = new Date(v);
     if (!Number.isNaN(d.getTime())) return d.toISOString();
   }
+  // Prefer a stable but clearly "unknown" value over throwing.
+  // Returning epoch keeps the API contract (`string`) without crashing routes.
   return new Date(0).toISOString();
 }
 
@@ -73,7 +75,7 @@ export function customerToFrontend(c: CustomerRow) {
     email: c.email,
     phone: c.phone,
     city: c.city,
-    created_at: c.createdAt.toISOString(),
+    created_at: coerceIsoTimestamp(c.createdAt as unknown),
   };
 }
 
@@ -86,6 +88,6 @@ export function consultationToFrontend(c: ConsultationRow) {
     monthly_bill: c.monthlyBill,
     message: c.message,
     status: c.status,
-    created_at: c.createdAt.toISOString(),
+    created_at: coerceIsoTimestamp(c.createdAt as unknown),
   };
 }
