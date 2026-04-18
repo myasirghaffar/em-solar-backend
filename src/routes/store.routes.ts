@@ -68,3 +68,26 @@ storeRoutes.post(
     return c.json(buildSuccessResponse(data), HttpStatusCode.CREATED);
   },
 );
+
+storeRoutes.get("/blogs", async (c) => {
+  const db = createDb(c.env);
+  const data = await catalog.listBlogsPublic(db);
+  return c.json(buildSuccessResponse(data));
+});
+
+storeRoutes.get("/blogs/:id", async (c) => {
+  const id = Number(c.req.param("id"));
+  if (!Number.isFinite(id) || id < 1) {
+    return c.json(
+      buildErrorResponse(
+        ErrorCodes.VALIDATION_FAILED,
+        HttpStatusCode.BAD_REQUEST,
+        "Invalid blog id",
+      ),
+      HttpStatusCode.BAD_REQUEST,
+    );
+  }
+  const db = createDb(c.env);
+  const data = await catalog.getBlogPublic(db, id);
+  return c.json(buildSuccessResponse(data));
+});

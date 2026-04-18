@@ -1,4 +1,5 @@
 import type {
+  BlogRow,
   ConsultationRow,
   CustomerRow,
   OrderRow,
@@ -89,5 +90,27 @@ export function consultationToFrontend(c: ConsultationRow) {
     message: c.message,
     status: c.status,
     created_at: coerceIsoTimestamp(c.createdAt as unknown),
+  };
+}
+
+function formatBlogDisplayDate(d: Date): string {
+  return d.toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' });
+}
+
+/** Admin + public API shape (matches storefront `NewsItem` + extras). */
+export function blogToFrontend(b: BlogRow) {
+  const published = b.publishedAt instanceof Date ? b.publishedAt : new Date(b.publishedAt as unknown as string);
+  return {
+    id: b.id,
+    title: b.title,
+    tag: b.tag,
+    image: b.imageUrl,
+    date: formatBlogDisplayDate(published),
+    excerpt: b.excerpt ?? '',
+    body: b.body ?? '',
+    is_published: b.isPublished,
+    published_at: coerceIsoTimestamp(b.publishedAt as unknown),
+    created_at: coerceIsoTimestamp(b.createdAt as unknown),
+    updated_at: coerceIsoTimestamp(b.updatedAt as unknown),
   };
 }

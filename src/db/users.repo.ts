@@ -1,5 +1,6 @@
-import { eq } from 'drizzle-orm';
+import { eq, sql } from 'drizzle-orm';
 import type { Database } from './client';
+import type { UserRole } from '../common/constants/roles.enum';
 import { users, type UserInsert, type UserRow } from './schema';
 
 export async function insertUser(db: Database, data: UserInsert): Promise<UserRow> {
@@ -18,6 +19,14 @@ export async function findUserByEmail(db: Database, email: string): Promise<User
 export async function findUserById(db: Database, id: string): Promise<UserRow | null> {
   const [row] = await db.select().from(users).where(eq(users.id, id)).limit(1);
   return row ?? null;
+}
+
+export async function listUsersByRole(db: Database, role: UserRole): Promise<UserRow[]> {
+  /** Compare as text so we match the DB even if Drizzle/pgEnum binding differs for newer enum values. */
+  return db
+    .select()
+    .from(users)
+    .where(sql`${users.role}::text = ${role}`);
 }
 
 export async function findUserByEmailVerifyToken(

@@ -14,7 +14,26 @@ import {
 } from 'drizzle-orm/pg-core';
 
 /** Matches legacy Sequelize `enum_users_role` for existing databases. */
-export const usersRoleEnum = pgEnum('enum_users_role', ['ADMIN', 'USER']);
+export const usersRoleEnum = pgEnum('enum_users_role', ['ADMIN', 'USER', 'SALESMAN']);
+
+/** Line items stored in `leads.quoteData` for PDF / UI. */
+export type LeadQuoteLine = {
+  description: string;
+  quantity: number;
+  unitPrice: number;
+  /** Shop `products.id` when picked from catalog */
+  productId?: number | null;
+  /** e.g. `Power: 550W` from product specifications */
+  variantLabel?: string | null;
+};
+
+export type LeadQuoteData = {
+  lines: LeadQuoteLine[];
+  taxPercent?: number;
+  discountAmount?: number;
+  notes?: string;
+  validUntil?: string;
+};
 
 export const users = pgTable('users', {
   id: uuid('id').primaryKey().defaultRandom(),
@@ -126,7 +145,44 @@ export const consultations = pgTable('consultations', {
     .defaultNow(),
 });
 
+export const leads = pgTable('leads', {
+  id: serial('id').primaryKey(),
+  name: varchar('name', { length: 255 }).notNull(),
+  contact: varchar('contact', { length: 64 }).notNull(),
+  location: varchar('location', { length: 255 }).notNull(),
+  productInterest: varchar('productInterest', { length: 255 }).notNull().default('Solar Panels'),
+  status: varchar('status', { length: 64 }).notNull().default('New'),
+  notes: text('notes').notNull().default(''),
+  assignedToUserId: uuid('assignedToUserId').references(() => users.id),
+  createdByUserId: uuid('createdByUserId')
+    .notNull()
+    .references(() => users.id),
+  quoteData: jsonb('quoteData').$type<LeadQuoteData | null>(),
+  createdAt: timestamp('createdAt', { withTimezone: true, mode: 'date' })
+    .notNull()
+    .defaultNow(),
+  updatedAt: timestamp('updatedAt', { withTimezone: true, mode: 'date' })
+    .notNull()
+    .defaultNow(),
+});
+
 export type ProductRow = typeof products.$inferSelect;
 export type OrderRow = typeof orders.$inferSelect;
 export type CustomerRow = typeof customers.$inferSelect;
 export type ConsultationRow = typeof consultations.$inferSelect;
+export type LeadRow = typeof leads.$inferSelect;
+
+export const blogs = pgTable('blogs', {
+  id: serial('id').primaryKey(),
+  title: varchar('title', { length: 500 }).notNull(),
+  tag: varchar('tag', { length: 200 }).notNull().default(''),
+  imageUrl: text('imageUrl').notNull(),
+  excerpt: text('excerpt').notNull().default(''),
+  body: text('body').notNull().default(''),
+  isPublished: boolean('isPublished').notNull().default(true),
+  publishedAt: timestamp('publishedAt', { withTimezone: true, mode: 'date' }).notNull().defaultNow(),
+  createdAt: timestamp('createdAt', { withTimezone: true, mode: 'date' }).notNull().defaultNow(),
+  updatedAt: timestamp('updatedAt', { withTimezone: true, mode: 'date' }).notNull().defaultNow(),
+});
+
+export type BlogRow = typeof blogs.$inferSelect;

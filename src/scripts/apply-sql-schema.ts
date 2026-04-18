@@ -17,7 +17,8 @@ async function main(): Promise<void> {
   }
   const raw = fs.readFileSync(filePath, 'utf8');
   const url = getMigrateDatabaseUrl();
-  const sql = postgres(url, { max: 1 });
+  /** Suppress PostgreSQL NOTICE (seed skips, IF NOT EXISTS, PL/pgSQL RAISE) — still shows errors. */
+  const sql = postgres(url, { max: 1, onnotice: () => {} });
   try {
     await sql.unsafe(raw);
     console.info('Applied scripts/apply-api-schema.sql successfully.');

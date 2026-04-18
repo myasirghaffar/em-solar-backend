@@ -12,6 +12,7 @@ import { mapDatabaseFaultFromChain } from './lib/map-database-fault';
 import { buildStatusDashboardHtml, getApiBootMs } from './lib/status-dashboard';
 import { adminStoreRoutes } from './routes/admin-store.routes';
 import { authRoutes } from './routes/auth.routes';
+import { leadsRoutes } from './routes/leads.routes';
 import { storeRoutes } from './routes/store.routes';
 import { usersRoutes } from './routes/users.routes';
 
@@ -39,6 +40,8 @@ const routeMethodHints: RouteMethodHint[] = [
   { pattern: /^\/store\/products\/[^/]+$/, allowed: ['GET'], template: '/store/products/:id' },
   { pattern: /^\/store\/orders$/, allowed: ['POST'], template: '/store/orders' },
   { pattern: /^\/store\/consultations$/, allowed: ['POST'], template: '/store/consultations' },
+  { pattern: /^\/store\/blogs$/, allowed: ['GET'], template: '/store/blogs' },
+  { pattern: /^\/store\/blogs\/[^/]+$/, allowed: ['GET'], template: '/store/blogs/:id' },
 
   { pattern: /^\/admin\/products$/, allowed: ['GET', 'POST'], template: '/admin/products' },
   { pattern: /^\/admin\/products\/[^/]+$/, allowed: ['PATCH', 'PUT', 'DELETE'], template: '/admin/products/:id' },
@@ -48,6 +51,13 @@ const routeMethodHints: RouteMethodHint[] = [
   { pattern: /^\/admin\/consultations$/, allowed: ['GET'], template: '/admin/consultations' },
   { pattern: /^\/admin\/consultations\/[^/]+$/, allowed: ['PATCH'], template: '/admin/consultations/:id' },
   { pattern: /^\/admin\/analytics$/, allowed: ['GET'], template: '/admin/analytics' },
+  { pattern: /^\/admin\/sales-team$/, allowed: ['GET', 'POST'], template: '/admin/sales-team' },
+  { pattern: /^\/admin\/sales-team\/[^/]+$/, allowed: ['PATCH'], template: '/admin/sales-team/:id' },
+  { pattern: /^\/admin\/blogs$/, allowed: ['GET', 'POST'], template: '/admin/blogs' },
+  { pattern: /^\/admin\/blogs\/[^/]+$/, allowed: ['PATCH', 'DELETE'], template: '/admin/blogs/:id' },
+
+  { pattern: /^\/leads$/, allowed: ['GET', 'POST'], template: '/leads' },
+  { pattern: /^\/leads\/[^/]+$/, allowed: ['GET', 'PATCH'], template: '/leads/:id' },
 ];
 
 /** Record isolate boot on first request (correct uptime on status page; see status-dashboard). */
@@ -107,6 +117,7 @@ app.route('/auth', authRoutes);
 app.route('/users', usersRoutes);
 app.route('/store', storeRoutes);
 app.route('/admin', adminStoreRoutes);
+app.route('/leads', leadsRoutes);
 
 app.notFound((c) => {
   const path = c.req.path;

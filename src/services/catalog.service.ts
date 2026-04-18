@@ -3,6 +3,7 @@ import type { Database } from '../db/client';
 import { ErrorCodes } from '../common/constants/error-codes';
 import { HttpStatusCode } from '../common/constants/http-status';
 import {
+  blogs,
   consultations,
   customers,
   orders,
@@ -11,6 +12,7 @@ import {
 } from '../db/schema';
 import { AppError } from '../lib/app-error';
 import {
+  blogToFrontend,
   consultationToFrontend,
   customerToFrontend,
   orderToFrontend,
@@ -303,4 +305,116 @@ export async function getAnalyticsAdmin(db: Database) {
     db.select().from(products),
   ]);
   return buildAnalytics(orderRows, customerRows.length, productRows.length);
+}
+
+export function listBlogsPublic(db: Database) {
+  return db
+    .select()
+    .from(blogs)
+    .where(eq(blogs.isPublished, true))
+    .orderBy(desc(blogs.publishedAt))
+    .then((rows) => rows.map(blogToFrontend));
+}
+
+export async function getBlogPublic(db: Database, id: number) {
+  const [row] = await db
+    .select()
+    .from(blogs)
+    .where(and(eq(blogs.id, id), eq(blogs.isPublished, true)))
+    .limit(1);
+  if (!row) {
+    throw new AppError(ErrorCodes.BLOG_NOT_FOUND, HttpStatusCode.NOT_FOUND);
+  }
+  return blogToFrontend(row);
+}
+
+export function listBlogsAdmin(db: Database) {
+  return db
+    .select()
+    .from(blogs)
+    .orderBy(desc(blogs.publishedAt))
+    .then((rows) => rows.map(blogToFrontend));
+}
+
+export async function createBlogAdmin(
+  db: Database,
+  payload: {
+    title: string;
+    tag?: string;
+    imageUrl: string;
+    excerpt?: string;
+    body?: string;
+    isPublished?: boolean;
+    publishedAt?: string;
+  },
+) {
+  const publishedAt = payload.publishedAt ? new Date(payload.publishedAt) : new Date();
+  if (Number.isNaN(publishedAt.getTime())) {
+    throw new AppError(ErrorCodes.VALIDATION_FAILED, HttpStatusCode.BAD_REQUEST, 'Invalid published date');
+  }
+  const [row] = await db
+    .insert(blogs)
+    .values({
+      title: payload.title.trim(),
+      tag: (payload.tag ?? '').trim(),
+      imageUrl: payload.imageUrl.trim(),
+      excerpt: (payload.excerpt ?? '').trim(),
+      body: (payload.body ?? '').trim(),
+      isPublished: payload.isPublished ?? true,
+      publishedAt,
+      updatedAt: new Date(),
+    })
+    .returning();
+  if (!row) throw new AppError(ErrorCodes.INTERNAL_SERVER_ERROR, HttpStatusCode.INTERNAL_SERVER_ERROR);
+  return blogToFrontend(row);
+}
+
+export async function updateBlogAdmin(
+  db: Database,
+  id: number,
+  patch: Partial<{
+    title: string;
+    tag: string;
+    imageUrl: string;
+    excerpt: string;
+    body: string;
+    isPublished: boolean;
+    publishedAt: string;
+  }>,
+) {
+  const [existing] = await db.select().from(blogs).where(eq(blogs.id, id)).limit(1);
+  if (!existing) {
+    throw new AppError(ErrorCodes.BLOG_NOT_FOUND, HttpStatusCode.NOT_FOUND);
+  }
+  let publishedAt: Date | undefined;
+  if (patch.publishedAt !== undefined) {
+    publishedAt = new Date(patch.publishedAt);
+    if (Number.isNaN(publishedAt.getTime())) {
+      throw new AppError(ErrorCodes.VALIDATION_FAILED, HttpStatusCode.BAD_REQUEST, 'Invalid published date');
+    }
+  }
+  const [row] = await db
+    .update(blogs)
+    .set({
+      ...(patch.title !== undefined ? { title: patch.title.trim() } : {}),
+      ...(patch.tag !== undefined ? { tag: patch.tag.trim() } : {}),
+      ...(patch.imageUrl !== undefined ? { imageUrl: patch.imageUrl.trim() } : {}),
+      ...(patch.excerpt !== undefined ? { excerpt: patch.excerpt.trim() } : {}),
+      ...(patch.body !== undefined ? { body: patch.body.trim() } : {}),
+      ...(patch.isPublished !== undefined ? { isPublished: patch.isPublished } : {}),
+      ...(publishedAt !== undefined ? { publishedAt } : {}),
+      updatedAt: new Date(),
+    })
+    .where(eq(blogs.id, id))
+    .returning();
+  if (!row) throw new AppError(ErrorCodes.BLOG_NOT_FOUND, HttpStatusCode.NOT_FOUND);
+  return blogToFrontend(row);
+}
+
+export async function deleteBlogAdmin(db: Database, id: number) {
+  const [existing] = await db.select().from(blogs).where(eq(blogs.id, id)).limit(1);
+  if (!existing) {
+    throw new AppError(ErrorCodes.BLOG_NOT_FOUND, HttpStatusCode.NOT_FOUND);
+  }
+  await db.delete(blogs).where(eq(blogs.id, id));
 }

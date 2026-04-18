@@ -51,3 +51,18 @@ export const requireAdmin = createMiddleware<{
   }
   await next();
 });
+
+/** Admin or salesman — store staff leads / quotes. */
+export const requireStaff = createMiddleware<{
+  Bindings: AppBindings;
+  Variables: AppVariables;
+}>(async (c, next) => {
+  const role = c.get('auth').role;
+  if (role !== UserRole.ADMIN && role !== UserRole.SALESMAN) {
+    return c.json(
+      buildErrorResponse(ErrorCodes.ACCESS_DENIED, HttpStatusCode.FORBIDDEN),
+      HttpStatusCode.FORBIDDEN,
+    );
+  }
+  await next();
+});

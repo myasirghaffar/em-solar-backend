@@ -307,3 +307,102 @@ BEGIN
   END IF;
 END
 $seed$;
+
+-- ---------------------------------------------------------------------------
+-- Salesman role + leads (quotes / CRM). Safe to re-run.
+-- ---------------------------------------------------------------------------
+ALTER TYPE enum_users_role ADD VALUE IF NOT EXISTS 'SALESMAN';
+
+CREATE TABLE IF NOT EXISTS "leads" (
+  "id" serial PRIMARY KEY NOT NULL,
+  "name" varchar(255) NOT NULL,
+  "contact" varchar(64) NOT NULL,
+  "location" varchar(255) NOT NULL,
+  "productInterest" varchar(255) NOT NULL DEFAULT 'Solar Panels',
+  "status" varchar(64) NOT NULL DEFAULT 'New',
+  "notes" text NOT NULL DEFAULT '',
+  "assignedToUserId" uuid REFERENCES "users"("id") ON DELETE SET NULL,
+  "createdByUserId" uuid NOT NULL REFERENCES "users"("id") ON DELETE RESTRICT,
+  "quoteData" jsonb,
+  "createdAt" timestamptz NOT NULL DEFAULT now(),
+  "updatedAt" timestamptz NOT NULL DEFAULT now()
+);
+
+CREATE INDEX IF NOT EXISTS "leads_assigned_idx" ON "leads" ("assignedToUserId");
+CREATE INDEX IF NOT EXISTS "leads_creator_idx" ON "leads" ("createdByUserId");
+
+-- ---------------------------------------------------------------------------
+-- Blog posts (homepage “Latest news” + /news). Managed from admin dashboard.
+-- ---------------------------------------------------------------------------
+CREATE TABLE IF NOT EXISTS "blogs" (
+  "id" serial PRIMARY KEY NOT NULL,
+  "title" varchar(500) NOT NULL,
+  "tag" varchar(200) NOT NULL DEFAULT '',
+  "imageUrl" text NOT NULL,
+  "excerpt" text NOT NULL DEFAULT '',
+  "body" text NOT NULL DEFAULT '',
+  "isPublished" boolean NOT NULL DEFAULT true,
+  "publishedAt" timestamptz NOT NULL DEFAULT now(),
+  "createdAt" timestamptz NOT NULL DEFAULT now(),
+  "updatedAt" timestamptz NOT NULL DEFAULT now()
+);
+
+CREATE INDEX IF NOT EXISTS "blogs_published_idx" ON "blogs" ("isPublished", "publishedAt" DESC);
+
+DO $blogseed$
+BEGIN
+  IF NOT EXISTS (SELECT 1 FROM "blogs" LIMIT 1) THEN
+    INSERT INTO "blogs" (
+      "title", "tag", "imageUrl", "excerpt", "body", "isPublished", "publishedAt", "createdAt", "updatedAt"
+    ) VALUES
+    (
+      'Strategic Alliance with MCB',
+      'AE Power',
+      'https://images.unsplash.com/photo-1560472354-b33ff0c44a43?w=1200&q=80',
+      'EnergyMart strengthens financing options for residential solar through a new banking partnership.',
+      'We are pleased to announce a strategic alliance that helps homeowners access competitive solar financing.',
+      true,
+      '2024-07-29T12:00:00Z', '2024-07-29T12:00:00Z', '2024-07-29T12:00:00Z'
+    ),
+    (
+      'Visit to China',
+      'AE Power',
+      'https://images.unsplash.com/photo-1522071820081-009f0129c71c?w=1200&q=80',
+      'Our team visited manufacturing partners to review next-generation inverter and module lines.',
+      'The delegation met with key suppliers and aligned on quality standards for the Pakistan market.',
+      true,
+      '2024-09-10T10:00:00Z', '2024-09-10T10:00:00Z', '2024-09-10T10:00:00Z'
+    ),
+    (
+      'CSR Activity at AE Power',
+      'AE Power',
+      'https://images.unsplash.com/photo-1517245386807-bb43f82c33c4?w=1200&q=80',
+      'Community outreach and STEM education at our Lahore facility.',
+      'Volunteers hosted workshops for students on clean energy careers and rooftop safety.',
+      true,
+      '2024-08-14T09:00:00Z', '2024-08-14T09:00:00Z', '2024-08-14T09:00:00Z'
+    ),
+    (
+      'Net Metering Guide for Homeowners',
+      'Policy',
+      'https://images.unsplash.com/photo-1509391366360-2e959784a276?w=1200&q=80',
+      'What to prepare before applying for net metering with your distribution company.',
+      'A practical checklist covering load assessment, inverter compatibility, and DISCO paperwork.',
+      true,
+      '2024-06-01T08:00:00Z', '2024-06-01T08:00:00Z', '2024-06-01T08:00:00Z'
+    ),
+    (
+      'Company Annual Meetup 2024',
+      'Culture',
+      'https://images.unsplash.com/photo-1542744173-8e7e5348bb03?w=1200&q=80',
+      'Teams from Karachi, Lahore, and Islamabad gathered to share wins and roadmap.',
+      'Highlights included installer training awards and a preview of new product bundles.',
+      true,
+      '2024-12-15T14:00:00Z', '2024-12-15T14:00:00Z', '2024-12-15T14:00:00Z'
+    );
+    RAISE NOTICE 'Seeded 5 demo blog posts.';
+  ELSE
+    RAISE NOTICE 'Blogs table already has rows; skipped blog seed.';
+  END IF;
+END
+$blogseed$;

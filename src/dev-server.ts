@@ -3,6 +3,8 @@
  * `wrangler dev` + Miniflare often hangs on outbound DB connections with postgres.js.
  */
 import { serve } from '@hono/node-server';
+import { createDb } from './db/client';
+import { ensureLeadsSchema } from './lib/ensure-leads-table';
 import { loadBackendEnv } from './scripts/load-env';
 import type { Env } from './types';
 import app from './index';
@@ -47,16 +49,24 @@ const env = buildEnv();
 const port = Number(process.env.PORT) || 8787;
 const hostname = process.env.HOST?.trim() || '0.0.0.0';
 
-serve({
-  hostname,
-  port,
-  fetch: (req) => app.fetch(req, env),
-});
+void (async () => {
+  try {
+    await ensureLeadsSchema(createDb(env));
+  } catch (e) {
+    console.error('[schema] ensureLeadsSchema failed — run scripts/apply-api-schema.sql on your database:', e);
+  }
 
-const hostForLog = hostname === '0.0.0.0' ? 'localhost' : hostname;
-console.info(`em-solar-api (Node) http://${hostForLog}:${port} — using .env / .dev.vars`);
-if (!process.env.RESEND_API_KEY?.trim() || !process.env.EMAIL_FROM?.trim()) {
-  console.info(
-    '[email] RESEND_API_KEY + EMAIL_FROM are not both set — verification emails are not sent; register/forgot responses include a "devVerificationUrl" / "devResetUrl" link instead.',
-  );
-}
+  serve({
+    hostname,
+    port,
+    fetch: (req) => app.fetch(req, env),
+  });
+
+  const hostForLog = hostname === '0.0.0.0' ? 'localhost' : hostname;
+  console.info(`em-solar-api (Node) http://${hostForLog}:${port} — using .env / .dev.vars`);
+  if (!process.env.RESEND_API_KEY?.trim() || !process.env.EMAIL_FROM?.trim()) {
+    console.info(
+      '[email] RESEND_API_KEY + EMAIL_FROM are not both set — verification emails are not sent; register/forgot responses include a "devVerificationUrl" / "devResetUrl" link instead.',
+    );
+  }
+})();

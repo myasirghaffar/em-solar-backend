@@ -5,6 +5,7 @@ import type { Database } from '../db/client';
 import * as usersRepo from '../db/users.repo';
 import type { UserRow } from '../db/schema';
 import { AppError } from '../lib/app-error';
+import { ensureSalesmanEnumValue } from '../lib/ensure-salesman-enum';
 import { hashPassword } from '../lib/password';
 
 export interface CreateUserInput {
@@ -32,13 +33,18 @@ export async function createUser(db: Database, input: CreateUserInput): Promise<
     throw new AppError(ErrorCodes.USER_ALREADY_EXISTS, HttpStatusCode.CONFLICT);
   }
 
+  const role = input.role ?? UserRole.USER;
+  if (role === UserRole.SALESMAN) {
+    await ensureSalesmanEnumValue(db);
+  }
+
   const hashedPassword = await hashPassword(input.password);
 
   return usersRepo.insertUser(db, {
     name: input.name.trim(),
     email,
     password: hashedPassword,
-    role: input.role ?? UserRole.USER,
+    role,
     isActive: input.isActive ?? true,
     emailVerified: input.emailVerified ?? false,
   });

@@ -1,14 +1,23 @@
 import { Hono } from 'hono';
 import { zValidator } from '@hono/zod-validator';
 import { HttpStatusCode } from '../common/constants/http-status';
+import { UserRole } from '../common/constants/roles.enum';
 import { createDb } from '../db/client';
+import * as usersRepo from '../db/users.repo';
 import { ErrorCodes } from '../common/constants/error-codes';
 import { buildErrorResponse, buildSuccessResponse } from '../lib/responses';
+import { ensureSalesmanEnumValue } from '../lib/ensure-salesman-enum';
+import { toPublicUser } from '../lib/user-public';
 import { requireAdmin, requireAuth, type AppBindings, type AppVariables } from '../middleware/auth';
 import * as catalog from '../services/catalog.service';
+import * as userService from '../services/user.service';
 import {
+  blogCreateSchema,
+  blogUpdateSchema,
   consultationStatusUpdateSchema,
+  createSalesmanSchema,
   orderStatusUpdateSchema,
+  patchSalesmanSchema,
   productCreateSchema,
   productUpdateSchema,
 } from '../validators/schemas';
@@ -24,12 +33,13 @@ adminStoreRoutes.use('*', requireAdmin);
  */
 adminStoreRoutes.get('/bootstrap', async (c) => {
   const db = createDb(c.env);
-  const [products, orders, customers, consultations, analytics] = await Promise.all([
+  const [products, orders, customers, consultations, analytics, blogs] = await Promise.all([
     catalog.listProductsAdmin(db),
     catalog.listOrdersAdmin(db),
     catalog.listCustomersAdmin(db),
     catalog.listConsultationsAdmin(db),
     catalog.getAnalyticsAdmin(db),
+    catalog.listBlogsAdmin(db),
   ]);
   return c.json(
     buildSuccessResponse({
@@ -38,6 +48,7 @@ adminStoreRoutes.get('/bootstrap', async (c) => {
       customers,
       consultations,
       analytics,
+      blogs,
     }),
   );
 });
@@ -155,3 +166,84 @@ adminStoreRoutes.get('/analytics', async (c) => {
   const data = await catalog.getAnalyticsAdmin(db);
   return c.json(buildSuccessResponse(data));
 });
+
+adminStoreRoutes.get('/blogs', async (c) => {
+  const db = createDb(c.env);
+  const data = await catalog.listBlogsAdmin(db);
+  return c.json(buildSuccessResponse(data));
+});
+
+adminStoreRoutes.post('/blogs', zValidator('json', blogCreateSchema), async (c) => {
+  const body = c.req.valid('json');
+  const db = createDb(c.env);
+  const data = await catalog.createBlogAdmin(db, body);
+  return c.json(buildSuccessResponse(data), HttpStatusCode.CREATED);
+});
+
+adminStoreRoutes.patch('/blogs/:id', zValidator('json', blogUpdateSchema), async (c) => {
+  const id = Number(c.req.param('id'));
+  if (!Number.isFinite(id) || id < 1) {
+    return c.json(
+      buildErrorResponse(ErrorCodes.VALIDATION_FAILED, HttpStatusCode.BAD_REQUEST, 'Invalid blog id'),
+      HttpStatusCode.BAD_REQUEST,
+    );
+  }
+  const body = c.req.valid('json');
+  const db = createDb(c.env);
+  const data = await catalog.updateBlogAdmin(db, id, body);
+  return c.json(buildSuccessResponse(data));
+});
+
+adminStoreRoutes.delete('/blogs/:id', async (c) => {
+  const id = Number(c.req.param('id'));
+  if (!Number.isFinite(id) || id < 1) {
+    return c.json(
+      buildErrorResponse(ErrorCodes.VALIDATION_FAILED, HttpStatusCode.BAD_REQUEST, 'Invalid blog id'),
+      HttpStatusCode.BAD_REQUEST,
+    );
+  }
+  const db = createDb(c.env);
+  await catalog.deleteBlogAdmin(db, id);
+  return c.json(buildSuccessResponse(null));
+});
+
+adminStoreRoutes.get('/sales-team', async (c) => {
+  const db = createDb(c.env);
+  await ensureSalesmanEnumValue(db);
+  const rows = await usersRepo.listUsersByRole(db, UserRole.SALESMAN);
+  return c.json(buildSuccessResponse(rows.map((u) => toPublicUser(u)).filter(Boolean)));
+});
+
+adminStoreRoutes.post('/sales-team', zValidator('json', createSalesmanSchema), async (c) => {
+  const body = c.req.valid('json');
+  const db = createDb(c.env);
+  await ensureSalesmanEnumValue(db);
+  const created = await userService.createUser(db, {
+    name: body.name,
+    email: body.email,
+    password: body.password,
+    role: UserRole.SALESMAN,
+    emailVerified: true,
+  });
+  return c.json(buildSuccessResponse(toPublicUser(created)), HttpStatusCode.CREATED);
+});
+
+adminStoreRoutes.patch(
+  '/sales-team/:id',
+  zValidator('json', patchSalesmanSchema),
+  async (c) => {
+    const id = c.req.param('id');
+    const body = c.req.valid('json');
+    const db = createDb(c.env);
+    await ensureSalesmanEnumValue(db);
+    const existing = await usersRepo.findUserById(db, id);
+    if (!existing || existing.role !== UserRole.SALESMAN) {
+      return c.json(
+        buildErrorResponse(ErrorCodes.USER_NOT_FOUND, HttpStatusCode.NOT_FOUND),
+        HttpStatusCode.NOT_FOUND,
+      );
+    }
+    const updated = await userService.updateUser(db, id, body);
+    return c.json(buildSuccessResponse(toPublicUser(updated)));
+  },
+);

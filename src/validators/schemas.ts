@@ -104,3 +104,81 @@ export const consultationCreateSchema = z.object({
   monthly_bill: z.string().optional(),
   message: z.string().optional(),
 });
+
+const quoteLineSchema = z.object({
+  description: z.string().min(1),
+  quantity: z.number().positive(),
+  unitPrice: z.number().nonnegative(),
+  productId: z.number().int().positive().optional().nullable(),
+  variantLabel: z.string().optional().nullable(),
+});
+
+export const quoteDataSchema = z.object({
+  lines: z.array(quoteLineSchema).min(1),
+  taxPercent: z.number().nonnegative().max(100).optional(),
+  discountAmount: z.number().nonnegative().optional(),
+  notes: z.string().optional(),
+  validUntil: z.string().optional(),
+});
+
+export const leadStatusSchema = z.enum(['New', 'Assigned', 'In Progress', 'Won', 'Lost']);
+
+export const leadCreateSchema = z.object({
+  name: z.string().min(1),
+  contact: z.string().min(1),
+  location: z.string().min(1),
+  productInterest: z.string().min(1).optional(),
+  notes: z.string().optional(),
+  assignedToUserId: z.string().uuid().nullable().optional(),
+});
+
+export const leadPatchSchema = z
+  .object({
+    name: z.string().min(1).optional(),
+    contact: z.string().min(1).optional(),
+    location: z.string().min(1).optional(),
+    productInterest: z.string().min(1).optional(),
+    status: leadStatusSchema.optional(),
+    notes: z.string().optional(),
+    assignedToUserId: z.string().uuid().nullable().optional(),
+    quoteData: quoteDataSchema.nullable().optional(),
+  })
+  .refine((o) => Object.keys(o).length > 0, { message: 'At least one field is required' });
+
+export const createSalesmanSchema = z.object({
+  name: z.string().min(1),
+  email: z.string().email(),
+  password: z.string().min(8),
+});
+
+export const patchSalesmanSchema = z
+  .object({
+    name: z.string().min(1).optional(),
+    email: z.string().email().optional(),
+    password: z.string().min(8).optional(),
+    isActive: z.boolean().optional(),
+  })
+  .refine((o) => Object.keys(o).length > 0, { message: 'At least one field is required' });
+
+export const blogCreateSchema = z.object({
+  title: z.string().min(1),
+  tag: z.string().optional(),
+  imageUrl: z.string().min(1),
+  excerpt: z.string().optional(),
+  body: z.string().optional(),
+  isPublished: z.boolean().optional(),
+  /** ISO 8601 or datetime string */
+  publishedAt: z.string().optional(),
+});
+
+export const blogUpdateSchema = z
+  .object({
+    title: z.string().min(1).optional(),
+    tag: z.string().optional(),
+    imageUrl: z.string().min(1).optional(),
+    excerpt: z.string().optional(),
+    body: z.string().optional(),
+    isPublished: z.boolean().optional(),
+    publishedAt: z.string().optional(),
+  })
+  .refine((o) => Object.keys(o).length > 0, { message: 'At least one field is required' });
