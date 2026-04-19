@@ -72,3 +72,22 @@ leadsRoutes.patch('/:id', zValidator('json', leadPatchSchema), async (c) => {
   }
   return c.json(buildSuccessResponse(row));
 });
+
+leadsRoutes.delete('/:id', async (c) => {
+  const id = Number(c.req.param('id'));
+  if (!Number.isFinite(id) || id < 1) {
+    return c.json(
+      buildErrorResponse(ErrorCodes.VALIDATION_FAILED, HttpStatusCode.BAD_REQUEST, 'Invalid lead id'),
+      HttpStatusCode.BAD_REQUEST,
+    );
+  }
+  const db = createDb(c.env);
+  const result = await leadsService.deleteLead(db, id, c.get('auth'));
+  if (result === 'not_found') {
+    return c.json(buildErrorResponse(ErrorCodes.LEAD_NOT_FOUND, HttpStatusCode.NOT_FOUND), HttpStatusCode.NOT_FOUND);
+  }
+  if (result === 'forbidden') {
+    return c.json(buildErrorResponse(ErrorCodes.ACCESS_DENIED, HttpStatusCode.FORBIDDEN), HttpStatusCode.FORBIDDEN);
+  }
+  return c.json(buildSuccessResponse({ ok: true as const }));
+});

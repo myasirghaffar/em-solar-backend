@@ -191,3 +191,15 @@ export async function updateLead(
   await db.update(leads).set(updates).where(eq(leads.id, id));
   return getLead(db, id, auth);
 }
+
+export async function deleteLead(
+  db: Database,
+  id: number,
+  auth: AccessJwtPayload,
+): Promise<'deleted' | 'not_found' | 'forbidden'> {
+  const [existing] = await db.select().from(leads).where(eq(leads.id, id)).limit(1);
+  if (!existing) return 'not_found';
+  if (auth.role !== UserRole.ADMIN) return 'forbidden';
+  await db.delete(leads).where(eq(leads.id, id));
+  return 'deleted';
+}

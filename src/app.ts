@@ -57,7 +57,7 @@ const routeMethodHints: RouteMethodHint[] = [
   { pattern: /^\/admin\/blogs\/[^/]+$/, allowed: ['PATCH', 'DELETE'], template: '/admin/blogs/:id' },
 
   { pattern: /^\/leads$/, allowed: ['GET', 'POST'], template: '/leads' },
-  { pattern: /^\/leads\/[^/]+$/, allowed: ['GET', 'PATCH'], template: '/leads/:id' },
+  { pattern: /^\/leads\/[^/]+$/, allowed: ['GET', 'PATCH', 'DELETE'], template: '/leads/:id' },
 ];
 
 /** Record isolate boot on first request (correct uptime on status page; see status-dashboard). */
