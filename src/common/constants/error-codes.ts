@@ -13,6 +13,8 @@ export enum ErrorCodes {
 
   USER_NOT_FOUND = 'USER_NOT_FOUND',
   USER_ALREADY_EXISTS = 'USER_ALREADY_EXISTS',
+  /** Delete or change would violate business rules (e.g. last admin, leads FK). */
+  USER_DELETE_BLOCKED = 'USER_DELETE_BLOCKED',
 
   ACCESS_DENIED = 'ACCESS_DENIED',
 

@@ -21,6 +21,8 @@ export const ErrorMessages: Record<ErrorCodes, string> = {
   [ErrorCodes.USER_NOT_FOUND]: 'No account was found for that information.',
   [ErrorCodes.USER_ALREADY_EXISTS]:
     'An account with this email already exists. Try signing in or use “Forgot password”.',
+  [ErrorCodes.USER_DELETE_BLOCKED]:
+    'This user cannot be removed or changed that way (for example: last admin, leads they created, or your own account).',
 
   [ErrorCodes.ACCESS_DENIED]: 'You do not have permission to do that.',
 

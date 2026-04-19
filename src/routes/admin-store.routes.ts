@@ -15,6 +15,7 @@ import {
   blogCreateSchema,
   blogUpdateSchema,
   consultationStatusUpdateSchema,
+  createAdminUserSchema,
   createSalesmanSchema,
   orderStatusUpdateSchema,
   patchSalesmanSchema,
@@ -204,6 +205,35 @@ adminStoreRoutes.delete('/blogs/:id', async (c) => {
   }
   const db = createDb(c.env);
   await catalog.deleteBlogAdmin(db, id);
+  return c.json(buildSuccessResponse(null));
+});
+
+adminStoreRoutes.get('/users', async (c) => {
+  const db = createDb(c.env);
+  const rows = await usersRepo.listAllUsers(db);
+  return c.json(buildSuccessResponse(rows.map((u) => toPublicUser(u)).filter(Boolean)));
+});
+
+adminStoreRoutes.post('/users', zValidator('json', createAdminUserSchema), async (c) => {
+  const body = c.req.valid('json');
+  const db = createDb(c.env);
+  if (body.role === UserRole.SALESMAN) {
+    await ensureSalesmanEnumValue(db);
+  }
+  const created = await userService.createUser(db, {
+    name: body.name,
+    email: body.email,
+    password: body.password,
+    role: body.role,
+    emailVerified: true,
+  });
+  return c.json(buildSuccessResponse(toPublicUser(created)), HttpStatusCode.CREATED);
+});
+
+adminStoreRoutes.delete('/users/:id', async (c) => {
+  const id = c.req.param('id');
+  const db = createDb(c.env);
+  await userService.deleteUserAsAdmin(db, id, c.get('auth').sub);
   return c.json(buildSuccessResponse(null));
 });
 

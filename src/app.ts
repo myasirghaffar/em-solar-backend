@@ -51,6 +51,8 @@ const routeMethodHints: RouteMethodHint[] = [
   { pattern: /^\/admin\/consultations$/, allowed: ['GET'], template: '/admin/consultations' },
   { pattern: /^\/admin\/consultations\/[^/]+$/, allowed: ['PATCH'], template: '/admin/consultations/:id' },
   { pattern: /^\/admin\/analytics$/, allowed: ['GET'], template: '/admin/analytics' },
+  { pattern: /^\/admin\/users$/, allowed: ['GET', 'POST'], template: '/admin/users' },
+  { pattern: /^\/admin\/users\/[^/]+$/, allowed: ['DELETE'], template: '/admin/users/:id' },
   { pattern: /^\/admin\/sales-team$/, allowed: ['GET', 'POST'], template: '/admin/sales-team' },
   { pattern: /^\/admin\/sales-team\/[^/]+$/, allowed: ['PATCH'], template: '/admin/sales-team/:id' },
   { pattern: /^\/admin\/blogs$/, allowed: ['GET', 'POST'], template: '/admin/blogs' },

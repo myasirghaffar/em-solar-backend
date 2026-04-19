@@ -63,6 +63,31 @@ export async function updateUser(
   id: string,
   dto: UpdateUserInput,
 ): Promise<UserRow> {
+  const current = await findById(db, id);
+  if (!current) {
+    throw new AppError(ErrorCodes.USER_NOT_FOUND, HttpStatusCode.NOT_FOUND);
+  }
+
+  const nextRole = dto.role ?? current.role;
+  const nextActive = dto.isActive ?? current.isActive;
+  if (current.role === UserRole.ADMIN && current.isActive) {
+    const willStayActiveAdmin = nextRole === UserRole.ADMIN && nextActive === true;
+    if (!willStayActiveAdmin) {
+      const activeAdmins = await usersRepo.countActiveAdmins(db);
+      if (activeAdmins <= 1) {
+        throw new AppError(
+          ErrorCodes.USER_DELETE_BLOCKED,
+          HttpStatusCode.BAD_REQUEST,
+          'Cannot demote or deactivate the last administrator.',
+        );
+      }
+    }
+  }
+
+  if (dto.role === UserRole.SALESMAN) {
+    await ensureSalesmanEnumValue(db);
+  }
+
   const patch: usersRepo.UserPatch = {};
 
   if (dto.name !== undefined) {
@@ -86,6 +111,46 @@ export async function updateUser(
     throw new AppError(ErrorCodes.USER_NOT_FOUND, HttpStatusCode.NOT_FOUND);
   }
   return updated;
+}
+
+export async function deleteUserAsAdmin(
+  db: Database,
+  targetId: string,
+  actorId: string,
+): Promise<void> {
+  if (targetId === actorId) {
+    throw new AppError(
+      ErrorCodes.USER_DELETE_BLOCKED,
+      HttpStatusCode.BAD_REQUEST,
+      'You cannot delete your own account.',
+    );
+  }
+  const target = await findById(db, targetId);
+  if (!target) {
+    throw new AppError(ErrorCodes.USER_NOT_FOUND, HttpStatusCode.NOT_FOUND);
+  }
+  if (target.role === UserRole.ADMIN) {
+    const adminCount = await usersRepo.countUsersByRole(db, UserRole.ADMIN);
+    if (adminCount <= 1) {
+      throw new AppError(
+        ErrorCodes.USER_DELETE_BLOCKED,
+        HttpStatusCode.BAD_REQUEST,
+        'Cannot delete the last admin account.',
+      );
+    }
+  }
+  const leadsN = await usersRepo.countLeadsCreatedByUser(db, targetId);
+  if (leadsN > 0) {
+    throw new AppError(
+      ErrorCodes.USER_DELETE_BLOCKED,
+      HttpStatusCode.BAD_REQUEST,
+      'Cannot delete this user because they created one or more leads. Reassign or remove those leads first.',
+    );
+  }
+  const deleted = await usersRepo.deleteUserById(db, targetId);
+  if (!deleted) {
+    throw new AppError(ErrorCodes.USER_NOT_FOUND, HttpStatusCode.NOT_FOUND);
+  }
 }
 
 export async function setRefreshTokenHash(

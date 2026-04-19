@@ -1,7 +1,7 @@
-import { eq, sql } from 'drizzle-orm';
+import { and, desc, eq, sql } from 'drizzle-orm';
 import type { Database } from './client';
-import type { UserRole } from '../common/constants/roles.enum';
-import { users, type UserInsert, type UserRow } from './schema';
+import { UserRole } from '../common/constants/roles.enum';
+import { leads, users, type UserInsert, type UserRow } from './schema';
 
 export async function insertUser(db: Database, data: UserInsert): Promise<UserRow> {
   const [row] = await db.insert(users).values(data).returning();
@@ -27,6 +27,40 @@ export async function listUsersByRole(db: Database, role: UserRole): Promise<Use
     .select()
     .from(users)
     .where(sql`${users.role}::text = ${role}`);
+}
+
+export async function listAllUsers(db: Database): Promise<UserRow[]> {
+  return db.select().from(users).orderBy(desc(users.createdAt));
+}
+
+export async function countUsersByRole(db: Database, role: UserRole): Promise<number> {
+  const [row] = await db
+    .select({ c: sql<number>`count(*)::int` })
+    .from(users)
+    .where(sql`${users.role}::text = ${role}`);
+  return row?.c ?? 0;
+}
+
+/** Users with role ADMIN and isActive true — for last-admin safeguards. */
+export async function countActiveAdmins(db: Database): Promise<number> {
+  const [row] = await db
+    .select({ c: sql<number>`count(*)::int` })
+    .from(users)
+    .where(and(eq(users.isActive, true), sql`${users.role}::text = ${UserRole.ADMIN}`));
+  return row?.c ?? 0;
+}
+
+export async function countLeadsCreatedByUser(db: Database, userId: string): Promise<number> {
+  const [row] = await db
+    .select({ c: sql<number>`count(*)::int` })
+    .from(leads)
+    .where(eq(leads.createdByUserId, userId));
+  return row?.c ?? 0;
+}
+
+export async function deleteUserById(db: Database, id: string): Promise<boolean> {
+  const [r] = await db.delete(users).where(eq(users.id, id)).returning({ id: users.id });
+  return r != null;
 }
 
 export async function findUserByEmailVerifyToken(
