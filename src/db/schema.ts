@@ -25,6 +25,13 @@ export type LeadQuoteLine = {
   productId?: number | null;
   /** e.g. `Power: 550W` from product specifications */
   variantLabel?: string | null;
+  /** Per-line shop category for quote UI (matches `product_categories.name` or `"__custom__"`) */
+  catalogCategoryKey?: string | null;
+  catalogCustomCategory?: string | null;
+  /** Bold line title on quotation PDF */
+  itemTitle?: string | null;
+  /** Multi-line detail under title on quotation PDF */
+  itemDescription?: string | null;
 };
 
 export type LeadQuoteData = {
@@ -86,6 +93,19 @@ export const products = pgTable('products', {
     .$type<{ title: string; href: string }[]>()
     .notNull()
     .default(sql`'[]'::jsonb`),
+  createdAt: timestamp('createdAt', { withTimezone: true, mode: 'date' })
+    .notNull()
+    .defaultNow(),
+  updatedAt: timestamp('updatedAt', { withTimezone: true, mode: 'date' })
+    .notNull()
+    .defaultNow(),
+});
+
+export const productCategories = pgTable('product_categories', {
+  id: serial('id').primaryKey(),
+  name: varchar('name', { length: 200 }).notNull().unique(),
+  /** Optional ordering for UIs (lower first). */
+  sortOrder: integer('sortOrder').notNull().default(0),
   createdAt: timestamp('createdAt', { withTimezone: true, mode: 'date' })
     .notNull()
     .defaultNow(),
@@ -167,6 +187,7 @@ export const leads = pgTable('leads', {
 });
 
 export type ProductRow = typeof products.$inferSelect;
+export type ProductCategoryRow = typeof productCategories.$inferSelect;
 export type OrderRow = typeof orders.$inferSelect;
 export type CustomerRow = typeof customers.$inferSelect;
 export type ConsultationRow = typeof consultations.$inferSelect;

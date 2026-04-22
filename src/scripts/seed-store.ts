@@ -174,6 +174,26 @@ const DEMO_PRODUCTS: DemoProduct[] = [
   },
 ];
 
+const DEMO_PRODUCT_CATEGORIES: { name: string; sortOrder: number }[] = [
+  { name: 'Inverter', sortOrder: 1 },
+  { name: 'Solar Panels', sortOrder: 2 },
+  { name: 'Structure', sortOrder: 3 },
+  { name: 'Wires', sortOrder: 4 },
+  { name: 'Fitting Items', sortOrder: 5 },
+  { name: 'Breakers etc.', sortOrder: 6 },
+  { name: 'Battery', sortOrder: 7 },
+  { name: 'Service charges', sortOrder: 8 },
+  { name: 'Transportation', sortOrder: 9 },
+  { name: 'Net-Metering', sortOrder: 10 },
+  { name: 'Earthing setup', sortOrder: 11 },
+  { name: 'Cloud monitoring', sortOrder: 12 },
+  { name: 'Add Manual', sortOrder: 13 },
+  // Current demo store categories used by seeded products.
+  { name: 'Solar Inverters', sortOrder: 20 },
+  { name: 'Batteries', sortOrder: 21 },
+  { name: 'Accessories', sortOrder: 22 },
+];
+
 const DEMO_CUSTOMERS: {
   name: string;
   email: string;
@@ -371,6 +391,21 @@ async function main(): Promise<void> {
   const url = getMigrateDatabaseUrl();
   const sqlClient = createPostgresFromDatabaseUrl(url);
   const db = drizzle(sqlClient, { schema });
+
+  // Seed product categories (idempotent by name).
+  for (const c of DEMO_PRODUCT_CATEGORIES) {
+    const [exists] = await db
+      .select({ id: schema.productCategories.id })
+      .from(schema.productCategories)
+      .where(eq(schema.productCategories.name, c.name))
+      .limit(1);
+    if (exists) continue;
+    await db.insert(schema.productCategories).values({
+      name: c.name,
+      sortOrder: c.sortOrder,
+      updatedAt: new Date(),
+    });
+  }
 
   const [{ productCount }] = await db
     .select({ productCount: sql<number>`count(*)::int` })

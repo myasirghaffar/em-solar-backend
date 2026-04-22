@@ -63,6 +63,16 @@ CREATE TABLE IF NOT EXISTS "products" (
   "updatedAt" timestamptz NOT NULL DEFAULT now()
 );
 
+-- Quote / admin: canonical product category list (safe to re-run)
+CREATE TABLE IF NOT EXISTS "product_categories" (
+  "id" serial PRIMARY KEY NOT NULL,
+  "name" varchar(200) NOT NULL,
+  "sortOrder" integer NOT NULL DEFAULT 0,
+  "createdAt" timestamptz NOT NULL DEFAULT now(),
+  "updatedAt" timestamptz NOT NULL DEFAULT now(),
+  CONSTRAINT "product_categories_name_unique" UNIQUE ("name")
+);
+
 CREATE TABLE IF NOT EXISTS "orders" (
   "id" serial PRIMARY KEY NOT NULL,
   "customerName" varchar(255) NOT NULL,

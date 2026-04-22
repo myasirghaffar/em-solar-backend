@@ -70,6 +70,20 @@ export const productUpdateSchema = productCreateSchema
   .partial()
   .refine((o) => Object.keys(o).length > 0, { message: 'At least one field is required' });
 
+export const productCategoryCreateSchema = z
+  .object({
+    name: z.string().min(1),
+    sortOrder: z.number().int().optional(),
+  })
+  .strict();
+
+export const productCategoryUpdateSchema = z
+  .object({
+    name: z.string().min(1).optional(),
+    sortOrder: z.number().int().optional(),
+  })
+  .refine((o) => Object.keys(o).length > 0, { message: 'At least one field is required' });
+
 export const orderStatusUpdateSchema = z.object({
   order_status: z.enum(['pending', 'processing', 'shipped', 'delivered', 'cancelled']),
 });
@@ -105,13 +119,23 @@ export const consultationCreateSchema = z.object({
   message: z.string().optional(),
 });
 
-const quoteLineSchema = z.object({
-  description: z.string().min(1),
-  quantity: z.number().positive(),
-  unitPrice: z.number().nonnegative(),
-  productId: z.number().int().positive().optional().nullable(),
-  variantLabel: z.string().optional().nullable(),
-});
+const quoteLineSchema = z
+  .object({
+    description: z.string(),
+    quantity: z.number().positive(),
+    unitPrice: z.number().nonnegative(),
+    productId: z.number().int().positive().optional().nullable(),
+    variantLabel: z.string().optional().nullable(),
+    catalogCategoryKey: z.string().optional().nullable(),
+    catalogCustomCategory: z.string().optional().nullable(),
+    itemTitle: z.string().optional().nullable(),
+    itemDescription: z.string().optional().nullable(),
+  })
+  .refine(
+    (l) =>
+      String(l.itemTitle ?? "").trim().length > 0 || String(l.description ?? "").trim().length > 0,
+    { message: 'Each line needs a product title or description' },
+  );
 
 export const quoteDataSchema = z.object({
   lines: z.array(quoteLineSchema).min(1),

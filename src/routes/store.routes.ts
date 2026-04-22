@@ -13,6 +13,12 @@ import {
 
 export const storeRoutes = new Hono<{ Bindings: AppBindings }>();
 
+storeRoutes.get("/product-categories", async (c) => {
+  const db = createDb(c.env);
+  const data = await catalog.listProductCategoriesPublic(db);
+  return c.json(buildSuccessResponse(data));
+});
+
 storeRoutes.get("/products", async (c) => {
   const db = createDb(c.env);
   const data = await catalog.listProductsPublic(db);

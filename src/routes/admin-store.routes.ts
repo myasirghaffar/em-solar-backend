@@ -19,6 +19,8 @@ import {
   createSalesmanSchema,
   orderStatusUpdateSchema,
   patchSalesmanSchema,
+  productCategoryCreateSchema,
+  productCategoryUpdateSchema,
   productCreateSchema,
   productUpdateSchema,
 } from '../validators/schemas';
@@ -34,8 +36,9 @@ adminStoreRoutes.use('*', requireAdmin);
  */
 adminStoreRoutes.get('/bootstrap', async (c) => {
   const db = createDb(c.env);
-  const [products, orders, customers, consultations, analytics, blogs] = await Promise.all([
+  const [products, productCategories, orders, customers, consultations, analytics, blogs] = await Promise.all([
     catalog.listProductsAdmin(db),
+    catalog.listProductCategoriesAdmin(db),
     catalog.listOrdersAdmin(db),
     catalog.listCustomersAdmin(db),
     catalog.listConsultationsAdmin(db),
@@ -45,6 +48,7 @@ adminStoreRoutes.get('/bootstrap', async (c) => {
   return c.json(
     buildSuccessResponse({
       products,
+      productCategories,
       orders,
       customers,
       consultations,
@@ -58,6 +62,54 @@ adminStoreRoutes.get('/products', async (c) => {
   const db = createDb(c.env);
   const data = await catalog.listProductsAdmin(db);
   return c.json(buildSuccessResponse(data));
+});
+
+adminStoreRoutes.get('/product-categories', async (c) => {
+  const db = createDb(c.env);
+  const data = await catalog.listProductCategoriesAdmin(db);
+  return c.json(buildSuccessResponse(data));
+});
+
+adminStoreRoutes.post(
+  '/product-categories',
+  zValidator('json', productCategoryCreateSchema),
+  async (c) => {
+    const body = c.req.valid('json');
+    const db = createDb(c.env);
+    const data = await catalog.createProductCategoryAdmin(db, body);
+    return c.json(buildSuccessResponse(data), HttpStatusCode.CREATED);
+  },
+);
+
+adminStoreRoutes.patch(
+  '/product-categories/:id',
+  zValidator('json', productCategoryUpdateSchema),
+  async (c) => {
+    const id = Number(c.req.param('id'));
+    if (!Number.isFinite(id) || id < 1) {
+      return c.json(
+        buildErrorResponse(ErrorCodes.VALIDATION_FAILED, HttpStatusCode.BAD_REQUEST, 'Invalid id'),
+        HttpStatusCode.BAD_REQUEST,
+      );
+    }
+    const body = c.req.valid('json');
+    const db = createDb(c.env);
+    const data = await catalog.updateProductCategoryAdmin(db, id, body);
+    return c.json(buildSuccessResponse(data));
+  },
+);
+
+adminStoreRoutes.delete('/product-categories/:id', async (c) => {
+  const id = Number(c.req.param('id'));
+  if (!Number.isFinite(id) || id < 1) {
+    return c.json(
+      buildErrorResponse(ErrorCodes.VALIDATION_FAILED, HttpStatusCode.BAD_REQUEST, 'Invalid id'),
+      HttpStatusCode.BAD_REQUEST,
+    );
+  }
+  const db = createDb(c.env);
+  await catalog.deleteProductCategoryAdmin(db, id);
+  return c.json(buildSuccessResponse(null));
 });
 
 adminStoreRoutes.post('/products', zValidator('json', productCreateSchema), async (c) => {

@@ -8,6 +8,7 @@ import {
   customers,
   orders,
   products,
+  productCategories,
   type OrderLineItem,
 } from '../db/schema';
 import { AppError } from '../lib/app-error';
@@ -19,6 +20,93 @@ import {
   productToFrontend,
 } from '../lib/store-mappers';
 import { buildAnalytics } from './analytics.service';
+
+function normalizeCategoryName(raw: string): string {
+  return String(raw ?? '')
+    .replace(/\s+/g, ' ')
+    .trim();
+}
+
+async function ensureCategoryExists(db: Database, nameRaw: string): Promise<void> {
+  const name = normalizeCategoryName(nameRaw);
+  if (!name) return;
+  const [existing] = await db
+    .select({ id: productCategories.id })
+    .from(productCategories)
+    .where(eq(productCategories.name, name))
+    .limit(1);
+  if (existing) return;
+  await db.insert(productCategories).values({ name, sortOrder: 0, updatedAt: new Date() });
+}
+
+export function listProductCategoriesPublic(db: Database) {
+  return db
+    .select()
+    .from(productCategories)
+    .orderBy(productCategories.sortOrder, productCategories.name)
+    .then((rows) =>
+      rows.map((r) => ({ id: r.id, name: r.name, sortOrder: r.sortOrder })),
+    );
+}
+
+export function listProductCategoriesAdmin(db: Database) {
+  return listProductCategoriesPublic(db);
+}
+
+export async function createProductCategoryAdmin(
+  db: Database,
+  payload: { name: string; sortOrder?: number },
+) {
+  const name = normalizeCategoryName(payload.name);
+  if (!name) {
+    throw new AppError(ErrorCodes.VALIDATION_FAILED, HttpStatusCode.BAD_REQUEST, 'Category name required');
+  }
+  const [row] = await db
+    .insert(productCategories)
+    .values({
+      name,
+      sortOrder: Number.isFinite(payload.sortOrder) ? Number(payload.sortOrder) : 0,
+      updatedAt: new Date(),
+    })
+    .returning();
+  if (!row) throw new AppError(ErrorCodes.INTERNAL_SERVER_ERROR, HttpStatusCode.INTERNAL_SERVER_ERROR);
+  return { id: row.id, name: row.name, sortOrder: row.sortOrder };
+}
+
+export async function updateProductCategoryAdmin(
+  db: Database,
+  id: number,
+  patch: Partial<{ name: string; sortOrder: number }>,
+) {
+  const [existing] = await db.select().from(productCategories).where(eq(productCategories.id, id)).limit(1);
+  if (!existing) {
+    throw new AppError(ErrorCodes.VALIDATION_FAILED, HttpStatusCode.NOT_FOUND, 'Category not found');
+  }
+  const set: Partial<{ name: string; sortOrder: number; updatedAt: Date }> = {
+    updatedAt: new Date(),
+  };
+  if (patch.name !== undefined) {
+    const name = normalizeCategoryName(patch.name);
+    if (!name) {
+      throw new AppError(ErrorCodes.VALIDATION_FAILED, HttpStatusCode.BAD_REQUEST, 'Category name required');
+    }
+    set.name = name;
+  }
+  if (patch.sortOrder !== undefined && Number.isFinite(patch.sortOrder)) {
+    set.sortOrder = Number(patch.sortOrder);
+  }
+  const [row] = await db.update(productCategories).set(set).where(eq(productCategories.id, id)).returning();
+  if (!row) throw new AppError(ErrorCodes.INTERNAL_SERVER_ERROR, HttpStatusCode.INTERNAL_SERVER_ERROR);
+  return { id: row.id, name: row.name, sortOrder: row.sortOrder };
+}
+
+export async function deleteProductCategoryAdmin(db: Database, id: number) {
+  const [existing] = await db.select().from(productCategories).where(eq(productCategories.id, id)).limit(1);
+  if (!existing) {
+    throw new AppError(ErrorCodes.VALIDATION_FAILED, HttpStatusCode.NOT_FOUND, 'Category not found');
+  }
+  await db.delete(productCategories).where(eq(productCategories.id, id));
+}
 
 export function listProductsPublic(db: Database) {
   return db
@@ -65,6 +153,7 @@ export async function createProductAdmin(
     attachments?: { title: string; href: string }[];
   },
 ) {
+  await ensureCategoryExists(db, payload.category);
   const [row] = await db
     .insert(products)
     .values({
@@ -105,6 +194,9 @@ export async function updateProductAdmin(
   const [existing] = await db.select().from(products).where(eq(products.id, id)).limit(1);
   if (!existing) {
     throw new AppError(ErrorCodes.PRODUCT_NOT_FOUND, HttpStatusCode.NOT_FOUND);
+  }
+  if (patch.category !== undefined) {
+    await ensureCategoryExists(db, patch.category);
   }
   const set: Partial<{
     name: string;
