@@ -9,7 +9,7 @@
 # Do not add VITE_API_URL here — that is a frontend *build-time* variable (Vite). The API Worker
 # never reads it. Set VITE_API_URL on the platform that runs `vite build` for em-solar (Pages, etc.).
 
-name = "em-solar-api"
+name = "em-solar-backend"
 main = "src/index.ts"
 compatibility_date = "2025-04-01"
 compatibility_flags = ["nodejs_compat"]
