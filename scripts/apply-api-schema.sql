@@ -59,9 +59,12 @@ CREATE TABLE IF NOT EXISTS "products" (
   "images" jsonb NOT NULL DEFAULT '[]'::jsonb,
   "specifications" jsonb NOT NULL DEFAULT '{}'::jsonb,
   "attachments" jsonb NOT NULL DEFAULT '[]'::jsonb,
+  "highlightOptions" jsonb NOT NULL DEFAULT '[]'::jsonb,
   "createdAt" timestamptz NOT NULL DEFAULT now(),
   "updatedAt" timestamptz NOT NULL DEFAULT now()
 );
+
+ALTER TABLE "products" ADD COLUMN IF NOT EXISTS "highlightOptions" jsonb NOT NULL DEFAULT '[]'::jsonb;
 
 -- Quote / admin: canonical product category list (safe to re-run)
 CREATE TABLE IF NOT EXISTS "product_categories" (

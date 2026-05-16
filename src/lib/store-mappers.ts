@@ -23,6 +23,9 @@ export function productToFrontend(p: ProductRow) {
         ? p.specifications
         : {},
     attachments: Array.isArray(p.attachments) ? p.attachments : [],
+    highlightOptions: Array.isArray(p.highlightOptions)
+      ? p.highlightOptions.filter((o): o is string => typeof o === 'string' && o.trim().length > 0)
+      : [],
   };
 }
 

@@ -52,6 +52,10 @@ export const updateUserSchema = z
 
 const attachmentSchema = z.object({ title: z.string(), href: z.string() });
 
+const highlightOptionsSchema = z
+  .array(z.string().trim().min(1).max(120))
+  .max(4);
+
 export const productCreateSchema = z.object({
   name: z.string().min(1),
   category: z.string().min(1),
@@ -64,6 +68,7 @@ export const productCreateSchema = z.object({
   images: z.array(z.string()).optional(),
   specifications: z.record(z.string(), z.string()).optional(),
   attachments: z.array(attachmentSchema).optional(),
+  highlightOptions: highlightOptionsSchema.optional(),
 });
 
 export const productUpdateSchema = productCreateSchema

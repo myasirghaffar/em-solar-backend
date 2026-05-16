@@ -151,6 +151,7 @@ export async function createProductAdmin(
     images?: string[];
     specifications?: Record<string, string>;
     attachments?: { title: string; href: string }[];
+    highlightOptions?: string[];
   },
 ) {
   await ensureCategoryExists(db, payload.category);
@@ -168,6 +169,7 @@ export async function createProductAdmin(
       images: payload.images ?? [],
       specifications: payload.specifications ?? {},
       attachments: payload.attachments ?? [],
+      highlightOptions: payload.highlightOptions ?? [],
     })
     .returning();
   if (!row) throw new AppError(ErrorCodes.INTERNAL_SERVER_ERROR, HttpStatusCode.INTERNAL_SERVER_ERROR);
@@ -189,6 +191,7 @@ export async function updateProductAdmin(
     images: string[];
     specifications: Record<string, string>;
     attachments: { title: string; href: string }[];
+    highlightOptions: string[];
   }>,
 ) {
   const [existing] = await db.select().from(products).where(eq(products.id, id)).limit(1);
@@ -210,6 +213,7 @@ export async function updateProductAdmin(
     images: string[];
     specifications: Record<string, string>;
     attachments: { title: string; href: string }[];
+    highlightOptions: string[];
     updatedAt: Date;
   }> = { updatedAt: new Date() };
   if (patch.name !== undefined) set.name = patch.name;
@@ -223,6 +227,7 @@ export async function updateProductAdmin(
   if (patch.images !== undefined) set.images = patch.images;
   if (patch.specifications !== undefined) set.specifications = patch.specifications;
   if (patch.attachments !== undefined) set.attachments = patch.attachments;
+  if (patch.highlightOptions !== undefined) set.highlightOptions = patch.highlightOptions;
 
   const [row] = await db.update(products).set(set).where(eq(products.id, id)).returning();
   if (!row) throw new AppError(ErrorCodes.PRODUCT_NOT_FOUND, HttpStatusCode.NOT_FOUND);

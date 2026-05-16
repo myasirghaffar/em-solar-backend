@@ -93,6 +93,11 @@ export const products = pgTable('products', {
     .$type<{ title: string; href: string }[]>()
     .notNull()
     .default(sql`'[]'::jsonb`),
+  /** Up to 4 short labels shown on the product page (e.g. Free Delivery). */
+  highlightOptions: jsonb('highlightOptions')
+    .$type<string[]>()
+    .notNull()
+    .default(sql`'[]'::jsonb`),
   createdAt: timestamp('createdAt', { withTimezone: true, mode: 'date' })
     .notNull()
     .defaultNow(),
