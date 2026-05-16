@@ -8,7 +8,7 @@ import { AppError } from '../lib/app-error';
 import { sendTransactionalEmail } from '../lib/mail';
 import { comparePassword, hashPassword } from '../lib/password';
 import { createOpaqueToken } from '../lib/random-token';
-import { generateTokens, type GeneratedTokens } from '../lib/jwt';
+import { generateTokens, signAccessToken, type GeneratedTokens } from '../lib/jwt';
 import type { SafePublicUser } from '../lib/user-public';
 import { toPublicUser } from '../lib/user-public';
 import * as userService from './user.service';
@@ -236,14 +236,18 @@ export async function refreshTokens(
     throw new AppError(ErrorCodes.AUTH_REFRESH_TOKEN_INVALID, HttpStatusCode.UNAUTHORIZED);
   }
 
-  const tokens = await generateAndStoreTokens(
-    db,
-    env,
-    user.id,
-    user.email,
-    user.role as UserRole,
-  );
-  return { ...tokens, user: toPublicUser(user)! };
+  // Issue a new access token only — keep the same refresh token so multiple tabs
+  // and parallel 401 retries do not invalidate each other.
+  const accessToken = await signAccessToken(env, {
+    userId: user.id,
+    email: user.email,
+    role: user.role as UserRole,
+  });
+  return {
+    accessToken,
+    refreshToken: refreshTokenPlain,
+    user: toPublicUser(user)!,
+  };
 }
 
 export async function forgotPassword(

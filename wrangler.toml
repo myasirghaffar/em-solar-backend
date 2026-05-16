@@ -30,7 +30,7 @@ persist = true
 head_sampling_rate = 1
 
 [vars]
-JWT_ACCESS_EXPIRATION = "15m"
+JWT_ACCESS_EXPIRATION = "1h"
 JWT_REFRESH_EXPIRATION = "7d"
 # Comma-separated origins (exact match, no trailing slash). Add every frontend host that calls this API.
 ALLOWED_ORIGINS = "http://localhost:5173,https://energymart-pk.vercel.app,https://em-solar.ghaffaryasir28.workers.dev"

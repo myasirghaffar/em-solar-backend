@@ -22,7 +22,7 @@ export async function signAccessToken(
   input: { userId: string; email: string; role: UserRole },
 ): Promise<string> {
   const secret = new TextEncoder().encode(env.JWT_ACCESS_SECRET);
-  const exp = env.JWT_ACCESS_EXPIRATION ?? '15m';
+  const exp = env.JWT_ACCESS_EXPIRATION ?? '1h';
 
   return new SignJWT({
     email: input.email,
