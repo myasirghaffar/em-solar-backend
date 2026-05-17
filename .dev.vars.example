@@ -1,6 +1,13 @@
-# Copy to `.dev.vars` for `wrangler dev` (never commit real values).
-# Production: use `wrangler secret put <NAME>` — secrets are not read from the repo.
+# Copy to `.dev.vars` for `wrangler dev` (gitignored). Mirror values from `.env`.
+#
+# wrangler secret put …  — for production deploy
+# .dev.vars             — for local wrangler dev only
 
-DATABASE_URL=postgresql://USER:PASSWORD@HOST/DB?sslmode=require
-JWT_ACCESS_SECRET=your-access-secret-min-32-chars
-JWT_REFRESH_SECRET=your-refresh-secret-min-32-chars
+# Transaction pooler (6543) — same as DATABASE_URL in .env
+DATABASE_URL=postgresql://postgres.geqhoiiqwlymljdgppco:YOUR_URL_ENCODED_PASSWORD@aws-1-ap-south-1.pooler.supabase.com:6543/postgres?pgbouncer=true
+
+JWT_ACCESS_SECRET=
+JWT_REFRESH_SECRET=
+
+# Optional — also set in wrangler.toml [vars] if you prefer
+# FRONTEND_APP_URL=https://energymart-pk.vercel.app

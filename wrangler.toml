@@ -1,13 +1,17 @@
-# Cloudflare Workers — set secrets with: wrangler secret put JWT_ACCESS_SECRET (etc.)
-# Postgres: use Hyperdrive in production (recommended) or DATABASE_URL for Neon/Supabase pooler.
-# See: https://developers.cloudflare.com/hyperdrive/
+# Cloudflare Worker — em-solar-api
 #
-# If API fetch() from the browser gets 302 → cloudflareaccess.com/login: Zero Trust (Access) is
-# protecting this hostname. Remove that app, or add a Bypass policy for public API paths — Access
-# is separate from DATABASE_URL / JWT; it blocks requests before they reach the Worker.
+# Secrets (never commit values — set in Dashboard or CLI, mirror em-solar-backend/.env):
+#   wrangler secret put DATABASE_URL     # Transaction pooler :6543, user postgres.geqhoiiqwlymljdgppco, URL-encoded password
+#   wrangler secret put JWT_ACCESS_SECRET
+#   wrangler secret put JWT_REFRESH_SECRET
+#   wrangler secret put RESEND_API_KEY     # optional
+#   wrangler secret put SUPABASE_SERVICE_ROLE_KEY  # optional
 #
-# Do not add VITE_API_URL here — that is a frontend *build-time* variable (Vite). The API Worker
-# never reads it. Set VITE_API_URL on the platform that runs `vite build` for em-solar (Pages, etc.).
+# Local `wrangler dev`: copy DATABASE_URL + JWT_* from `.env` into `.dev.vars` (gitignored).
+# Local `npm run dev` (Node): uses `.env` only.
+#
+# Supabase project: geqhoiiqwlymljdgppco | pooler host: aws-1-ap-south-1.pooler.supabase.com
+# Do not add VITE_API_URL here — frontend build-time only (em-solar/.env).
 
 name = "em-solar-api"
 main = "src/index.ts"
@@ -30,17 +34,24 @@ persist = true
 head_sampling_rate = 1
 
 [vars]
+# Auth token lifetimes (match .env)
 JWT_ACCESS_EXPIRATION = "1h"
 JWT_REFRESH_EXPIRATION = "7d"
-# Comma-separated origins (exact match, no trailing slash). Add every frontend host that calls this API.
-ALLOWED_ORIGINS = "http://localhost:5173,https://energymart-pk.vercel.app,https://em-solar.ghaffaryasir28.workers.dev"
-# Shown on HTML status dashboard (/, /status). Override DEPLOYED_AT / GIT_* per deploy in dashboard or CI.
-ENVIRONMENT = "production"
-# Status page “Cloudflare Workers” card — bump when you change compatibility_date above.
-WORKER_COMPAT_DATE = "2025-04-01"
 
+# CORS — exact origins, no trailing slash (match .env / Cloudflare dashboard)
+ALLOWED_ORIGINS = "http://localhost:5173,https://energymart-pk.vercel.app,https://em-solar.ghaffaryasir28.workers.dev"
+
+# Public / non-secret app config (match .env)
+ENVIRONMENT = "production"
+WORKER_COMPAT_DATE = "2025-04-01"
+FRONTEND_APP_URL = "https://energymart-pk.vercel.app"
+EMAIL_FROM = "EnergyMart <onboarding@resend.dev>"
+DEV_EXPOSE_EMAIL_LINKS = "true"
+
+# Hyperdrive → Supabase (production). Configure connection in Cloudflare dashboard with the same
+# pooler URI as DATABASE_URL in .env (transaction mode, port 6543).
 [[hyperdrive]]
 binding = "HYPERDRIVE"
 id = "03968b8e83ee42ceb48cd26123a80f3d"
-# Optional for local `wrangler dev` only:
-# localConnectionString = "postgresql://user:pass@localhost:5432/postgres"
+# Optional for `wrangler dev` when HYPERDRIVE is used without DATABASE_URL in .dev.vars:
+# localConnectionString = "postgresql://postgres.geqhoiiqwlymljdgppco:ENCODED_PASSWORD@aws-1-ap-south-1.pooler.supabase.com:6543/postgres?pgbouncer=true"
