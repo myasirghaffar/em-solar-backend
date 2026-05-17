@@ -31,7 +31,7 @@ function mapDatabaseFault(err: unknown): DatabaseFaultInfo | null {
   const msg = typeof e.message === 'string' ? e.message : typeof err === 'string' ? err : '';
   const name = typeof e.name === 'string' ? e.name : '';
 
-  if (code === 'ECONNREFUSED' || code === 'ENOTFOUND' || code === 'ETIMEDOUT') {
+  if (code === 'ECONNREFUSED' || code === 'ENOTFOUND' || code === 'ETIMEDOUT' || code === 'ENETUNREACH') {
     return {
       code: ErrorCodes.DATABASE_UNAVAILABLE,
       statusCode: HttpStatusCode.SERVICE_UNAVAILABLE,
@@ -61,6 +61,17 @@ function mapDatabaseFault(err: unknown): DatabaseFaultInfo | null {
       code: ErrorCodes.DATABASE_UNAVAILABLE,
       statusCode: HttpStatusCode.SERVICE_UNAVAILABLE,
       logLabel: 'network:connection_lost',
+    };
+  }
+
+  if (
+    lower.includes('enetunreach') ||
+    lower.includes('network is unreachable')
+  ) {
+    return {
+      code: ErrorCodes.DATABASE_UNAVAILABLE,
+      statusCode: HttpStatusCode.SERVICE_UNAVAILABLE,
+      logLabel: 'network:ENETUNREACH',
     };
   }
 
