@@ -1,13 +1,35 @@
-# Copy to `.dev.vars` for `wrangler dev` (gitignored). Mirror values from `.env`.
-#
-# wrangler secret put …  — for production deploy
-# .dev.vars             — for local wrangler dev only
+# =============================================================================
+# Local dev only (npm run dev, npm run db:*). Production API runs on Railway.
+# Railway variables: see railway.env.example
+# =============================================================================
 
-# Transaction pooler (6543) — same as DATABASE_URL in .env
-DATABASE_URL=postgresql://postgres.geqhoiiqwlymljdgppco:YOUR_URL_ENCODED_PASSWORD@aws-1-ap-south-1.pooler.supabase.com:6543/postgres?pgbouncer=true
+# --- Supabase Postgres (project: geqhoiiqwlymljdgppco) ---
+DATABASE_URL=postgresql://postgres.geqhoiiqwlymljdgppco:Jutt%4080610em@aws-1-ap-south-1.pooler.supabase.com:6543/postgres?pgbouncer=true
+DIRECT_URL=postgresql://postgres.geqhoiiqwlymljdgppco:Jutt%4080610em@aws-1-ap-south-1.pooler.supabase.com:5432/postgres
 
-JWT_ACCESS_SECRET=
-JWT_REFRESH_SECRET=
+# --- Auth — copy these three to Railway (same values) ---
+JWT_ACCESS_SECRET=cPq6KXss5lge2NiW0nXJvQZY/6cCpXc7NXJUrgnLQgw=
+JWT_REFRESH_SECRET=Rn6Lx10j8iEbUiaXRdpHUkDbmjS0HIHRKnsAeS9C4r0=
+JWT_ACCESS_EXPIRATION=1h
+JWT_REFRESH_EXPIRATION=7d
 
-# Optional — also set in wrangler.toml [vars] if you prefer
-# FRONTEND_APP_URL=https://energymart-pk.vercel.app
+# --- CORS — copy to Railway (add preview URLs if needed) ---
+ALLOWED_ORIGINS=http://localhost:5173,https://energymart-pk.vercel.app,https://www.energymart.pk
+
+FRONTEND_APP_URL=https://energymart-pk.vercel.app
+
+RESEND_API_KEY=
+EMAIL_FROM=EnergyMart <onboarding@resend.dev>
+DEV_EXPOSE_EMAIL_LINKS=true
+ADMIN_INVITE_SECRET=
+
+# --- Supabase REST (optional; Railway plugin may set these) ---
+SUPABASE_URL=https://geqhoiiqwlymljdgppco.supabase.co
+SUPABASE_ANON_KEY=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImdlcWhvaWlxd2x5bWxqZGdwcGNvIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzM3MzI0MzksImV4cCI6MjA4OTMwODQzOX0.iCBRFRGHDQ9QmiEg6U1RvSd4UcdNp4KcUWOpUBQ9_e8
+SUPABASE_SERVICE_ROLE_KEY=
+
+ADMIN_EMAIL=admin@energymart.pk
+ADMIN_PASSWORD=change-me-min-8-chars
+ADMIN_NAME=EnergyMart Admin
+
+ENVIRONMENT=development
