@@ -10,6 +10,9 @@ import { buildErrorResponse } from './lib/responses';
 import type { AppBindings, AppVariables } from './middleware/auth';
 import { mapDatabaseFaultFromChain } from './lib/map-database-fault';
 import { buildStatusDashboardHtml, getApiBootMs } from './lib/status-dashboard';
+import { parseDatabaseUrlDiagnostics } from './lib/database-url-diagnostics';
+import { pingDatabase } from './lib/ping-database';
+import { envWithDatabaseUrl, getConnectionString } from './db/client';
 import { adminStoreRoutes } from './routes/admin-store.routes';
 import { authRoutes } from './routes/auth.routes';
 import { leadsRoutes } from './routes/leads.routes';
@@ -114,6 +117,35 @@ app.get('/', (c) => {
 app.get('/status', (c) => c.html(buildStatusDashboardHtml(c.env)));
 
 app.get('/health', (c) => c.json({ ok: true }));
+
+app.get('/health/db', async (c) => {
+  const env = envWithDatabaseUrl(c.env);
+  let connectionString: string | undefined;
+  try {
+    connectionString = getConnectionString(env);
+  } catch {
+    connectionString = undefined;
+  }
+  const config = parseDatabaseUrlDiagnostics(connectionString);
+  const result = await pingDatabase(env);
+  if (result.ok) {
+    return c.json({ ok: true, database: 'connected', config });
+  }
+  return c.json(
+    {
+      ok: false,
+      database: 'unavailable',
+      code: result.code,
+      postgresMessage: result.message,
+      config,
+      hint:
+        config.usesDirectSupabaseHost && !config.usesPooler
+          ? 'Railway cannot use Supabase direct host db.*.supabase.co — remove DIRECT_URL from Railway and set DATABASE_URL to the pooler URI (port 5432) from em-solar-backend/.env.'
+          : 'Set DATABASE_URL on Railway to your Supabase pooler URI (user postgres.<project-ref>, URL-encoded password, port 5432). Remove any broken DIRECT_URL from the Supabase plugin. Redeploy after saving.',
+    },
+    503,
+  );
+});
 
 app.route('/auth', authRoutes);
 app.route('/users', usersRoutes);

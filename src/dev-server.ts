@@ -5,6 +5,9 @@
 import { serve } from '@hono/node-server';
 import { createDb } from './db/client';
 import { ensureLeadsSchema } from './lib/ensure-leads-table';
+import { pingDatabase } from './lib/ping-database';
+import { parseDatabaseUrlDiagnostics } from './lib/database-url-diagnostics';
+import { resolveDatabaseUrlFromProcessEnv } from './lib/resolve-database-url';
 import { loadBackendEnv } from './scripts/load-env';
 import type { Env } from './types';
 import app from './index';
@@ -12,11 +15,13 @@ import app from './index';
 loadBackendEnv();
 
 function buildEnv(): Env {
-  const databaseUrl = process.env.DATABASE_URL?.trim();
+  const databaseUrl = resolveDatabaseUrlFromProcessEnv();
   const access = process.env.JWT_ACCESS_SECRET?.trim();
   const refresh = process.env.JWT_REFRESH_SECRET?.trim();
   if (!databaseUrl) {
-    throw new Error('DATABASE_URL is missing. Set it in em-solar-backend/.env');
+    throw new Error(
+      'DATABASE_URL is missing. Set DATABASE_URL (or DIRECT_URL) in Railway / .env — use Supabase pooler URI with user postgres.<project-ref> and URL-encoded password.',
+    );
   }
   if (!access || !refresh) {
     throw new Error('JWT_ACCESS_SECRET and JWT_REFRESH_SECRET are required in .env');
@@ -50,6 +55,19 @@ const port = Number(process.env.PORT) || 8787;
 const hostname = process.env.HOST?.trim() || '0.0.0.0';
 
 void (async () => {
+  const dbPing = await pingDatabase(env);
+  if (!dbPing.ok) {
+    const cfg = parseDatabaseUrlDiagnostics(env.DATABASE_URL);
+    console.error(
+      '[database] Startup ping failed — fix DATABASE_URL on Railway (pooler :5432, remove broken DIRECT_URL from plugin):',
+      dbPing.code,
+      dbPing.message,
+      cfg,
+    );
+  } else {
+    console.info('[database] Connected successfully');
+  }
+
   try {
     await ensureLeadsSchema(createDb(env));
   } catch (e) {

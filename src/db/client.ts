@@ -3,6 +3,7 @@ import { ErrorCodes } from '../common/constants/error-codes';
 import { HttpStatusCode } from '../common/constants/http-status';
 import { AppError } from '../lib/app-error';
 import { createPostgresFromDatabaseUrl } from '../lib/postgres-from-env-url';
+import { resolveDatabaseUrlFromProcessEnv } from '../lib/resolve-database-url';
 import type { Env } from '../types';
 import * as schema from './schema';
 
@@ -27,8 +28,9 @@ function parsePoolMax(env: Env): number {
 }
 
 export function getConnectionString(env: Env): string {
-  if (env.DATABASE_URL?.trim()) {
-    return env.DATABASE_URL.trim();
+  const fromEnv = env.DATABASE_URL?.trim();
+  if (fromEnv) {
+    return fromEnv;
   }
   const fromHyperdrive = env.HYPERDRIVE?.connectionString;
   if (fromHyperdrive) {
@@ -37,11 +39,23 @@ export function getConnectionString(env: Env): string {
   throw new AppError(ErrorCodes.DATABASE_NOT_CONFIGURED, HttpStatusCode.SERVICE_UNAVAILABLE);
 }
 
+/** Node / Railway: merge process.env database URL into Env when DATABASE_URL is missing on c.env. */
+export function envWithDatabaseUrl(env: Env): Env {
+  if (env.DATABASE_URL?.trim()) {
+    return env;
+  }
+  const resolved = resolveDatabaseUrlFromProcessEnv();
+  if (!resolved) {
+    return env;
+  }
+  return { ...env, DATABASE_URL: resolved };
+}
+
 /**
  * Single connection per isolate (max: 1) — required pattern for Workers + postgres.js.
  */
 export function createDb(env: Env) {
-  const url = getConnectionString(env);
+  const url = getConnectionString(envWithDatabaseUrl(env));
   /**
    * Hyperdrive connection handles can be request-scoped in Workers.
    * Reusing a client across requests can throw:
