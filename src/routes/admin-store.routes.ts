@@ -5,6 +5,7 @@ import { UserRole } from '../common/constants/roles.enum';
 import { createDb } from '../db/client';
 import * as usersRepo from '../db/users.repo';
 import { ErrorCodes } from '../common/constants/error-codes';
+import { jsonWithRevalidation } from '../lib/http-revalidation';
 import { buildErrorResponse, buildSuccessResponse } from '../lib/responses';
 import { ensureSalesmanEnumValue } from '../lib/ensure-salesman-enum';
 import { toPublicUser } from '../lib/user-public';
@@ -45,7 +46,8 @@ adminStoreRoutes.get('/bootstrap', async (c) => {
     catalog.getAnalyticsAdmin(db),
     catalog.listBlogsAdmin(db),
   ]);
-  return c.json(
+  return jsonWithRevalidation(
+    c,
     buildSuccessResponse({
       products,
       productCategories,
@@ -55,19 +57,20 @@ adminStoreRoutes.get('/bootstrap', async (c) => {
       analytics,
       blogs,
     }),
+    { cacheControl: 'private, max-age=0, must-revalidate' },
   );
 });
 
 adminStoreRoutes.get('/products', async (c) => {
   const db = createDb(c.env);
   const data = await catalog.listProductsAdmin(db);
-  return c.json(buildSuccessResponse(data));
+  return jsonWithRevalidation(c, buildSuccessResponse(data));
 });
 
 adminStoreRoutes.get('/product-categories', async (c) => {
   const db = createDb(c.env);
   const data = await catalog.listProductCategoriesAdmin(db);
-  return c.json(buildSuccessResponse(data));
+  return jsonWithRevalidation(c, buildSuccessResponse(data));
 });
 
 adminStoreRoutes.post(
@@ -163,7 +166,7 @@ adminStoreRoutes.delete('/products/:id', async (c) => {
 adminStoreRoutes.get('/orders', async (c) => {
   const db = createDb(c.env);
   const data = await catalog.listOrdersAdmin(db);
-  return c.json(buildSuccessResponse(data));
+  return jsonWithRevalidation(c, buildSuccessResponse(data));
 });
 
 adminStoreRoutes.patch(
@@ -187,13 +190,13 @@ adminStoreRoutes.patch(
 adminStoreRoutes.get('/customers', async (c) => {
   const db = createDb(c.env);
   const data = await catalog.listCustomersAdmin(db);
-  return c.json(buildSuccessResponse(data));
+  return jsonWithRevalidation(c, buildSuccessResponse(data));
 });
 
 adminStoreRoutes.get('/consultations', async (c) => {
   const db = createDb(c.env);
   const data = await catalog.listConsultationsAdmin(db);
-  return c.json(buildSuccessResponse(data));
+  return jsonWithRevalidation(c, buildSuccessResponse(data));
 });
 
 adminStoreRoutes.patch(
@@ -217,13 +220,13 @@ adminStoreRoutes.patch(
 adminStoreRoutes.get('/analytics', async (c) => {
   const db = createDb(c.env);
   const data = await catalog.getAnalyticsAdmin(db);
-  return c.json(buildSuccessResponse(data));
+  return jsonWithRevalidation(c, buildSuccessResponse(data));
 });
 
 adminStoreRoutes.get('/blogs', async (c) => {
   const db = createDb(c.env);
   const data = await catalog.listBlogsAdmin(db);
-  return c.json(buildSuccessResponse(data));
+  return jsonWithRevalidation(c, buildSuccessResponse(data));
 });
 
 adminStoreRoutes.post('/blogs', zValidator('json', blogCreateSchema), async (c) => {
@@ -263,7 +266,7 @@ adminStoreRoutes.delete('/blogs/:id', async (c) => {
 adminStoreRoutes.get('/users', async (c) => {
   const db = createDb(c.env);
   const rows = await usersRepo.listAllUsers(db);
-  return c.json(buildSuccessResponse(rows.map((u) => toPublicUser(u)).filter(Boolean)));
+  return jsonWithRevalidation(c, buildSuccessResponse(rows.map((u) => toPublicUser(u)).filter(Boolean)));
 });
 
 adminStoreRoutes.post('/users', zValidator('json', createAdminUserSchema), async (c) => {
@@ -293,7 +296,7 @@ adminStoreRoutes.get('/sales-team', async (c) => {
   const db = createDb(c.env);
   await ensureSalesmanEnumValue(db);
   const rows = await usersRepo.listUsersByRole(db, UserRole.SALESMAN);
-  return c.json(buildSuccessResponse(rows.map((u) => toPublicUser(u)).filter(Boolean)));
+  return jsonWithRevalidation(c, buildSuccessResponse(rows.map((u) => toPublicUser(u)).filter(Boolean)));
 });
 
 adminStoreRoutes.post('/sales-team', zValidator('json', createSalesmanSchema), async (c) => {

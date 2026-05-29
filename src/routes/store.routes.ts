@@ -2,6 +2,7 @@ import { Hono } from "hono";
 import { zValidator } from "@hono/zod-validator";
 import { HttpStatusCode } from "../common/constants/http-status";
 import { createDb } from "../db/client";
+import { jsonWithRevalidation } from "../lib/http-revalidation";
 import { buildErrorResponse, buildSuccessResponse } from "../lib/responses";
 import { ErrorCodes } from "../common/constants/error-codes";
 import type { AppBindings } from "../middleware/auth";
@@ -16,13 +17,17 @@ export const storeRoutes = new Hono<{ Bindings: AppBindings }>();
 storeRoutes.get("/product-categories", async (c) => {
   const db = createDb(c.env);
   const data = await catalog.listProductCategoriesPublic(db);
-  return c.json(buildSuccessResponse(data));
+  return jsonWithRevalidation(c, buildSuccessResponse(data), {
+    cacheControl: "public, max-age=60, stale-while-revalidate=120",
+  });
 });
 
 storeRoutes.get("/products", async (c) => {
   const db = createDb(c.env);
   const data = await catalog.listProductsPublic(db);
-  return c.json(buildSuccessResponse(data));
+  return jsonWithRevalidation(c, buildSuccessResponse(data), {
+    cacheControl: "public, max-age=60, stale-while-revalidate=120",
+  });
 });
 
 storeRoutes.get("/products/:id", async (c) => {
@@ -39,7 +44,9 @@ storeRoutes.get("/products/:id", async (c) => {
   }
   const db = createDb(c.env);
   const data = await catalog.getProductPublic(db, id);
-  return c.json(buildSuccessResponse(data));
+  return jsonWithRevalidation(c, buildSuccessResponse(data), {
+    cacheControl: "public, max-age=60, stale-while-revalidate=120",
+  });
 });
 
 storeRoutes.post(
@@ -78,7 +85,9 @@ storeRoutes.post(
 storeRoutes.get("/blogs", async (c) => {
   const db = createDb(c.env);
   const data = await catalog.listBlogsPublic(db);
-  return c.json(buildSuccessResponse(data));
+  return jsonWithRevalidation(c, buildSuccessResponse(data), {
+    cacheControl: "public, max-age=120, stale-while-revalidate=300",
+  });
 });
 
 storeRoutes.get("/blogs/:id", async (c) => {
@@ -95,5 +104,7 @@ storeRoutes.get("/blogs/:id", async (c) => {
   }
   const db = createDb(c.env);
   const data = await catalog.getBlogPublic(db, id);
-  return c.json(buildSuccessResponse(data));
+  return jsonWithRevalidation(c, buildSuccessResponse(data), {
+    cacheControl: "public, max-age=120, stale-while-revalidate=300",
+  });
 });
