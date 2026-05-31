@@ -9,6 +9,7 @@ import type { AppBindings } from "../middleware/auth";
 import * as catalog from "../services/catalog.service";
 import {
   consultationCreateSchema,
+  contactMessageCreateSchema,
   storeOrderCreateSchema,
 } from "../validators/schemas";
 
@@ -78,6 +79,17 @@ storeRoutes.post(
     const body = c.req.valid("json");
     const db = createDb(c.env);
     const data = await catalog.createConsultationPublic(db, body);
+    return c.json(buildSuccessResponse(data), HttpStatusCode.CREATED);
+  },
+);
+
+storeRoutes.post(
+  "/contact-messages",
+  zValidator("json", contactMessageCreateSchema),
+  async (c) => {
+    const body = c.req.valid("json");
+    const db = createDb(c.env);
+    const data = await catalog.createContactMessagePublic(c.env, db, body);
     return c.json(buildSuccessResponse(data), HttpStatusCode.CREATED);
   },
 );

@@ -1,6 +1,7 @@
 import type {
   BlogRow,
   ConsultationRow,
+  ContactMessageRow,
   CustomerRow,
   OrderRow,
   ProductRow,
@@ -93,6 +94,19 @@ export function consultationToFrontend(c: ConsultationRow) {
     message: c.message,
     status: c.status,
     created_at: coerceIsoTimestamp(c.createdAt as unknown),
+  };
+}
+
+export function contactMessageToFrontend(m: ContactMessageRow) {
+  return {
+    id: m.id,
+    name: m.name,
+    email: m.email,
+    phone: m.phone,
+    subject: m.subject,
+    message: m.message,
+    status: m.status,
+    created_at: coerceIsoTimestamp(m.createdAt as unknown),
   };
 }
 

@@ -5,6 +5,7 @@ import { HttpStatusCode } from '../common/constants/http-status';
 import {
   blogs,
   consultations,
+  contactMessages,
   customers,
   orders,
   products,
@@ -12,13 +13,16 @@ import {
   type OrderLineItem,
 } from '../db/schema';
 import { AppError } from '../lib/app-error';
+import { sendContactMessageEmails } from '../lib/contact-message-email';
 import {
   blogToFrontend,
   consultationToFrontend,
+  contactMessageToFrontend,
   customerToFrontend,
   orderToFrontend,
   productToFrontend,
 } from '../lib/store-mappers';
+import type { Env } from '../types';
 import { buildAnalytics } from './analytics.service';
 
 function normalizeCategoryName(raw: string): string {
@@ -393,6 +397,61 @@ export async function createConsultationPublic(
     .returning();
   if (!row) throw new AppError(ErrorCodes.INTERNAL_SERVER_ERROR, HttpStatusCode.INTERNAL_SERVER_ERROR);
   return consultationToFrontend(row);
+}
+
+export function listContactMessagesAdmin(db: Database) {
+  return db
+    .select()
+    .from(contactMessages)
+    .orderBy(desc(contactMessages.id))
+    .then((rows) => rows.map(contactMessageToFrontend));
+}
+
+export async function updateContactMessageStatusAdmin(db: Database, id: number, status: string) {
+  const [existing] = await db.select().from(contactMessages).where(eq(contactMessages.id, id)).limit(1);
+  if (!existing) {
+    throw new AppError(ErrorCodes.CONTACT_MESSAGE_NOT_FOUND, HttpStatusCode.NOT_FOUND);
+  }
+  const [row] = await db
+    .update(contactMessages)
+    .set({ status, updatedAt: new Date() })
+    .where(eq(contactMessages.id, id))
+    .returning();
+  if (!row) throw new AppError(ErrorCodes.CONTACT_MESSAGE_NOT_FOUND, HttpStatusCode.NOT_FOUND);
+  return contactMessageToFrontend(row);
+}
+
+export async function createContactMessagePublic(
+  env: Env,
+  db: Database,
+  payload: {
+    name: string;
+    email: string;
+    phone?: string;
+    subject: string;
+    message: string;
+  },
+) {
+  const [row] = await db
+    .insert(contactMessages)
+    .values({
+      name: payload.name.trim(),
+      email: payload.email.trim().toLowerCase(),
+      phone: (payload.phone ?? '').trim(),
+      subject: payload.subject.trim(),
+      message: payload.message.trim(),
+      status: 'new',
+    })
+    .returning();
+  if (!row) throw new AppError(ErrorCodes.INTERNAL_SERVER_ERROR, HttpStatusCode.INTERNAL_SERVER_ERROR);
+
+  try {
+    await sendContactMessageEmails(env, db, row);
+  } catch (err) {
+    console.error('[contact] email delivery failed (submission saved):', err);
+  }
+
+  return contactMessageToFrontend(row);
 }
 
 export async function getAnalyticsAdmin(db: Database) {

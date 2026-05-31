@@ -43,6 +43,7 @@ const routeMethodHints: RouteMethodHint[] = [
   { pattern: /^\/store\/products\/[^/]+$/, allowed: ['GET'], template: '/store/products/:id' },
   { pattern: /^\/store\/orders$/, allowed: ['POST'], template: '/store/orders' },
   { pattern: /^\/store\/consultations$/, allowed: ['POST'], template: '/store/consultations' },
+  { pattern: /^\/store\/contact-messages$/, allowed: ['POST'], template: '/store/contact-messages' },
   { pattern: /^\/store\/blogs$/, allowed: ['GET'], template: '/store/blogs' },
   { pattern: /^\/store\/blogs\/[^/]+$/, allowed: ['GET'], template: '/store/blogs/:id' },
 
@@ -53,6 +54,8 @@ const routeMethodHints: RouteMethodHint[] = [
   { pattern: /^\/admin\/customers$/, allowed: ['GET'], template: '/admin/customers' },
   { pattern: /^\/admin\/consultations$/, allowed: ['GET'], template: '/admin/consultations' },
   { pattern: /^\/admin\/consultations\/[^/]+$/, allowed: ['PATCH'], template: '/admin/consultations/:id' },
+  { pattern: /^\/admin\/contact-messages$/, allowed: ['GET'], template: '/admin/contact-messages' },
+  { pattern: /^\/admin\/contact-messages\/[^/]+$/, allowed: ['PATCH'], template: '/admin/contact-messages/:id' },
   { pattern: /^\/admin\/analytics$/, allowed: ['GET'], template: '/admin/analytics' },
   { pattern: /^\/admin\/users$/, allowed: ['GET', 'POST'], template: '/admin/users' },
   { pattern: /^\/admin\/users\/[^/]+$/, allowed: ['DELETE'], template: '/admin/users/:id' },

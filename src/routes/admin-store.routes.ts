@@ -16,6 +16,7 @@ import {
   blogCreateSchema,
   blogUpdateSchema,
   consultationStatusUpdateSchema,
+  contactMessageStatusUpdateSchema,
   createAdminUserSchema,
   createSalesmanSchema,
   orderStatusUpdateSchema,
@@ -37,12 +38,14 @@ adminStoreRoutes.use('*', requireAdmin);
  */
 adminStoreRoutes.get('/bootstrap', async (c) => {
   const db = createDb(c.env);
-  const [products, productCategories, orders, customers, consultations, analytics, blogs] = await Promise.all([
+  const [products, productCategories, orders, customers, consultations, contactMessages, analytics, blogs] =
+    await Promise.all([
     catalog.listProductsAdmin(db),
     catalog.listProductCategoriesAdmin(db),
     catalog.listOrdersAdmin(db),
     catalog.listCustomersAdmin(db),
     catalog.listConsultationsAdmin(db),
+    catalog.listContactMessagesAdmin(db),
     catalog.getAnalyticsAdmin(db),
     catalog.listBlogsAdmin(db),
   ]);
@@ -54,6 +57,7 @@ adminStoreRoutes.get('/bootstrap', async (c) => {
       orders,
       customers,
       consultations,
+      contactMessages,
       analytics,
       blogs,
     }),
@@ -213,6 +217,30 @@ adminStoreRoutes.patch(
     const { status } = c.req.valid('json');
     const db = createDb(c.env);
     const data = await catalog.updateConsultationStatusAdmin(db, id, status);
+    return c.json(buildSuccessResponse(data));
+  },
+);
+
+adminStoreRoutes.get('/contact-messages', async (c) => {
+  const db = createDb(c.env);
+  const data = await catalog.listContactMessagesAdmin(db);
+  return jsonWithRevalidation(c, buildSuccessResponse(data));
+});
+
+adminStoreRoutes.patch(
+  '/contact-messages/:id',
+  zValidator('json', contactMessageStatusUpdateSchema),
+  async (c) => {
+    const id = Number(c.req.param('id'));
+    if (!Number.isFinite(id) || id < 1) {
+      return c.json(
+        buildErrorResponse(ErrorCodes.VALIDATION_FAILED, HttpStatusCode.BAD_REQUEST, 'Invalid id'),
+        HttpStatusCode.BAD_REQUEST,
+      );
+    }
+    const { status } = c.req.valid('json');
+    const db = createDb(c.env);
+    const data = await catalog.updateContactMessageStatusAdmin(db, id, status);
     return c.json(buildSuccessResponse(data));
   },
 );

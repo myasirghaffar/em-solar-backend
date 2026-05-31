@@ -42,6 +42,7 @@ export const STATUS_ROUTE_MANIFEST: RouteRow[] = [
   { method: 'GET', path: '/store/products/:id' },
   { method: 'POST', path: '/store/orders' },
   { method: 'POST', path: '/store/consultations' },
+  { method: 'POST', path: '/store/contact-messages' },
   { method: 'GET', path: '/admin/products' },
   { method: 'POST', path: '/admin/products' },
   { method: 'PATCH', path: '/admin/products/:id' },
@@ -52,6 +53,8 @@ export const STATUS_ROUTE_MANIFEST: RouteRow[] = [
   { method: 'GET', path: '/admin/customers' },
   { method: 'GET', path: '/admin/consultations' },
   { method: 'PATCH', path: '/admin/consultations/:id' },
+  { method: 'GET', path: '/admin/contact-messages' },
+  { method: 'PATCH', path: '/admin/contact-messages/:id' },
   { method: 'GET', path: '/admin/analytics' },
 ];
 

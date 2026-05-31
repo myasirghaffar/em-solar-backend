@@ -116,6 +116,18 @@ CREATE TABLE IF NOT EXISTS "consultations" (
   "updatedAt" timestamptz NOT NULL DEFAULT now()
 );
 
+CREATE TABLE IF NOT EXISTS "contact_messages" (
+  "id" serial PRIMARY KEY NOT NULL,
+  "name" varchar(255) NOT NULL,
+  "email" varchar(255) NOT NULL,
+  "phone" varchar(64) NOT NULL DEFAULT '',
+  "subject" varchar(500) NOT NULL,
+  "message" text NOT NULL,
+  "status" varchar(64) NOT NULL DEFAULT 'new',
+  "createdAt" timestamptz NOT NULL DEFAULT now(),
+  "updatedAt" timestamptz NOT NULL DEFAULT now()
+);
+
 -- ---------------------------------------------------------------------------
 -- Demo seed (products → customers → orders → consultations), idempotent
 -- ---------------------------------------------------------------------------

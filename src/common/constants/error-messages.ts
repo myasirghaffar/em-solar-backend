@@ -39,6 +39,7 @@ export const ErrorMessages: Record<ErrorCodes, string> = {
   [ErrorCodes.PRODUCT_NOT_FOUND]: 'That product could not be found.',
   [ErrorCodes.ORDER_NOT_FOUND]: 'That order could not be found.',
   [ErrorCodes.CONSULTATION_NOT_FOUND]: 'That consultation request could not be found.',
+  [ErrorCodes.CONTACT_MESSAGE_NOT_FOUND]: 'That contact message could not be found.',
   [ErrorCodes.LEAD_NOT_FOUND]: 'That lead could not be found.',
   [ErrorCodes.BLOG_NOT_FOUND]: 'That blog post could not be found.',
 };

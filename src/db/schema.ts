@@ -170,6 +170,22 @@ export const consultations = pgTable('consultations', {
     .defaultNow(),
 });
 
+export const contactMessages = pgTable('contact_messages', {
+  id: serial('id').primaryKey(),
+  name: varchar('name', { length: 255 }).notNull(),
+  email: varchar('email', { length: 255 }).notNull(),
+  phone: varchar('phone', { length: 64 }).notNull().default(''),
+  subject: varchar('subject', { length: 500 }).notNull(),
+  message: text('message').notNull(),
+  status: varchar('status', { length: 64 }).notNull().default('new'),
+  createdAt: timestamp('createdAt', { withTimezone: true, mode: 'date' })
+    .notNull()
+    .defaultNow(),
+  updatedAt: timestamp('updatedAt', { withTimezone: true, mode: 'date' })
+    .notNull()
+    .defaultNow(),
+});
+
 export const leads = pgTable('leads', {
   id: serial('id').primaryKey(),
   name: varchar('name', { length: 255 }).notNull(),
@@ -196,6 +212,7 @@ export type ProductCategoryRow = typeof productCategories.$inferSelect;
 export type OrderRow = typeof orders.$inferSelect;
 export type CustomerRow = typeof customers.$inferSelect;
 export type ConsultationRow = typeof consultations.$inferSelect;
+export type ContactMessageRow = typeof contactMessages.$inferSelect;
 export type LeadRow = typeof leads.$inferSelect;
 
 export const blogs = pgTable('blogs', {

@@ -19,6 +19,8 @@ export interface Env {
   RESEND_API_KEY?: string;
   /** From address, e.g. `EnergyMart <onboarding@resend.dev>`. */
   EMAIL_FROM?: string;
+  /** Inbox for contact-form admin alerts. Falls back to first active admin user email. */
+  ADMIN_NOTIFY_EMAIL?: string;
   /** When true and Resend is unset, register/resend may include a dev-only verification URL in JSON. */
   DEV_EXPOSE_EMAIL_LINKS?: string;
   /** If set, POST /auth/register-admin requires this exact secret in the JSON body. */

@@ -124,6 +124,18 @@ export const consultationCreateSchema = z.object({
   message: z.string().optional(),
 });
 
+export const contactMessageStatusUpdateSchema = z.object({
+  status: z.enum(['new', 'read', 'replied', 'closed']),
+});
+
+export const contactMessageCreateSchema = z.object({
+  name: z.string().min(1).max(255),
+  email: z.string().email().max(255),
+  phone: z.string().max(64).optional(),
+  subject: z.string().min(1).max(500),
+  message: z.string().min(1).max(10000),
+});
+
 const quoteLineSchema = z
   .object({
     description: z.string(),

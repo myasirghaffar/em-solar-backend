@@ -39,6 +39,7 @@ function buildEnv(): Env {
     FRONTEND_APP_URL: process.env.FRONTEND_APP_URL,
     RESEND_API_KEY: process.env.RESEND_API_KEY,
     EMAIL_FROM: process.env.EMAIL_FROM,
+    ADMIN_NOTIFY_EMAIL: process.env.ADMIN_NOTIFY_EMAIL,
     DEV_EXPOSE_EMAIL_LINKS: process.env.DEV_EXPOSE_EMAIL_LINKS,
     ADMIN_INVITE_SECRET: process.env.ADMIN_INVITE_SECRET,
     ENVIRONMENT: process.env.ENVIRONMENT,
