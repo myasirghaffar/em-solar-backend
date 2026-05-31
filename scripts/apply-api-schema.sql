@@ -130,7 +130,7 @@ BEGIN
     (
       'Monocrystalline Solar Panel 550W', 'Solar Panels', 28500, 24,
       'High-efficiency mono PERC module for residential and commercial rooftops.',
-      'Order from EnergyMart.pk for genuine stock, invoice-backed warranty, and nationwide logistics support.',
+      'Order from energymart.pk for genuine stock, invoice-backed warranty, and nationwide logistics support.',
       'JA Solar', 'active',
       '["https://images.unsplash.com/photo-1508514177221-188b1cf16e9d?w=800&q=80"]'::jsonb,
       '{"Power":"550W","Type":"Monocrystalline"}'::jsonb,

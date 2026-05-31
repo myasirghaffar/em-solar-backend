@@ -25,14 +25,14 @@ function frontendBase(env: Env): string {
 async function sendVerificationEmail(env: Env, to: string, token: string): Promise<void> {
   const verifyUrl = `${frontendBase(env)}/verify-email?token=${encodeURIComponent(token)}`;
   const html = `
-    <p>Welcome to EnergyMart.pk</p>
+    <p>Welcome to energymart.pk</p>
     <p>Please verify your email by clicking the button below.</p>
     <p><a href="${verifyUrl}" style="display:inline-block;padding:12px 20px;background:#FF7A00;color:#fff;text-decoration:none;border-radius:8px;">Verify email</a></p>
     <p style="color:#666;font-size:12px;">If the button does not work, copy this link:<br/>${verifyUrl}</p>
   `;
   await sendTransactionalEmail(env, {
     to,
-    subject: 'Verify your EnergyMart.pk account',
+    subject: 'Verify your energymart.pk account',
     html,
   });
 }
@@ -40,13 +40,13 @@ async function sendVerificationEmail(env: Env, to: string, token: string): Promi
 async function sendPasswordResetEmail(env: Env, to: string, token: string): Promise<void> {
   const resetUrl = `${frontendBase(env)}/reset-password?token=${encodeURIComponent(token)}`;
   const html = `
-    <p>We received a request to reset your EnergyMart.pk password.</p>
+    <p>We received a request to reset your energymart.pk password.</p>
     <p><a href="${resetUrl}" style="display:inline-block;padding:12px 20px;background:#FF7A00;color:#fff;text-decoration:none;border-radius:8px;">Reset password</a></p>
     <p style="color:#666;font-size:12px;">If you did not request this, you can ignore this email.<br/>${resetUrl}</p>
   `;
   await sendTransactionalEmail(env, {
     to,
-    subject: 'Reset your EnergyMart.pk password',
+    subject: 'Reset your energymart.pk password',
     html,
   });
 }

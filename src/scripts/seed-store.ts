@@ -45,7 +45,7 @@ const DEMO_PRODUCTS: DemoProduct[] = [
     description:
       'High-efficiency mono PERC module for residential and commercial rooftops.',
     longDescription:
-      'Order from EnergyMart.pk for genuine stock, invoice-backed warranty, and nationwide logistics support.',
+      'Order from energymart.pk for genuine stock, invoice-backed warranty, and nationwide logistics support.',
     brand: 'JA Solar',
     status: 'active',
     images: [
