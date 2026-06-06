@@ -6,6 +6,7 @@ import { createDb } from '../db/client';
 import { ensureLeadsSchema } from '../lib/ensure-leads-table';
 import { buildErrorResponse, buildSuccessResponse } from '../lib/responses';
 import { requireAuth, requireStaff, type AppBindings, type AppVariables } from '../middleware/auth';
+import * as catalog from '../services/catalog.service';
 import * as leadsService from '../services/leads.service';
 import { leadCreateSchema, leadPatchSchema } from '../validators/schemas';
 
@@ -23,6 +24,12 @@ leadsRoutes.use('*', requireStaff);
 leadsRoutes.get('/', async (c) => {
   const db = createDb(c.env);
   const rows = await leadsService.listLeads(db, c.get('auth'));
+  return c.json(buildSuccessResponse(rows));
+});
+
+leadsRoutes.get('/quote-templates', async (c) => {
+  const db = createDb(c.env);
+  const rows = await catalog.listQuoteTemplatesStaff(db);
   return c.json(buildSuccessResponse(rows));
 });
 

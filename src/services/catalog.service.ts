@@ -1,4 +1,4 @@
-import { and, desc, eq } from 'drizzle-orm';
+import { and, asc, desc, eq } from 'drizzle-orm';
 import type { Database } from '../db/client';
 import { ErrorCodes } from '../common/constants/error-codes';
 import { HttpStatusCode } from '../common/constants/http-status';
@@ -10,6 +10,7 @@ import {
   orders,
   products,
   productCategories,
+  quoteTemplates,
   type OrderLineItem,
 } from '../db/schema';
 import { AppError } from '../lib/app-error';
@@ -110,6 +111,124 @@ export async function deleteProductCategoryAdmin(db: Database, id: number) {
     throw new AppError(ErrorCodes.VALIDATION_FAILED, HttpStatusCode.NOT_FOUND, 'Category not found');
   }
   await db.delete(productCategories).where(eq(productCategories.id, id));
+}
+
+function quoteTemplateToFrontend(row: typeof quoteTemplates.$inferSelect) {
+  return {
+    id: row.id,
+    category: row.category,
+    title: row.title,
+    description: row.description,
+    sortOrder: row.sortOrder,
+    isActive: row.isActive,
+    createdAt: row.createdAt.toISOString(),
+    updatedAt: row.updatedAt.toISOString(),
+  };
+}
+
+function normalizeQuoteTemplateText(raw: string): string {
+  return String(raw ?? '').trim();
+}
+
+export function listQuoteTemplatesStaff(db: Database) {
+  return db
+    .select()
+    .from(quoteTemplates)
+    .where(eq(quoteTemplates.isActive, true))
+    .orderBy(asc(quoteTemplates.sortOrder), asc(quoteTemplates.category))
+    .then((rows) => rows.map(quoteTemplateToFrontend));
+}
+
+export function listQuoteTemplatesAdmin(db: Database) {
+  return db
+    .select()
+    .from(quoteTemplates)
+    .orderBy(asc(quoteTemplates.sortOrder), asc(quoteTemplates.category))
+    .then((rows) => rows.map(quoteTemplateToFrontend));
+}
+
+export async function createQuoteTemplateAdmin(
+  db: Database,
+  payload: {
+    category: string;
+    title: string;
+    description?: string;
+    sortOrder?: number;
+    isActive?: boolean;
+  },
+) {
+  const category = normalizeCategoryName(payload.category);
+  const title = normalizeQuoteTemplateText(payload.title);
+  if (!category) {
+    throw new AppError(ErrorCodes.VALIDATION_FAILED, HttpStatusCode.BAD_REQUEST, 'Category required');
+  }
+  if (!title) {
+    throw new AppError(ErrorCodes.VALIDATION_FAILED, HttpStatusCode.BAD_REQUEST, 'Title required');
+  }
+  const [row] = await db
+    .insert(quoteTemplates)
+    .values({
+      category,
+      title,
+      description: payload.description ?? '',
+      sortOrder: Number.isFinite(payload.sortOrder) ? Number(payload.sortOrder) : 0,
+      isActive: payload.isActive ?? true,
+      updatedAt: new Date(),
+    })
+    .returning();
+  if (!row) throw new AppError(ErrorCodes.INTERNAL_SERVER_ERROR, HttpStatusCode.INTERNAL_SERVER_ERROR);
+  return quoteTemplateToFrontend(row);
+}
+
+export async function updateQuoteTemplateAdmin(
+  db: Database,
+  id: number,
+  patch: Partial<{
+    category: string;
+    title: string;
+    description: string;
+    sortOrder: number;
+    isActive: boolean;
+  }>,
+) {
+  const [existing] = await db.select().from(quoteTemplates).where(eq(quoteTemplates.id, id)).limit(1);
+  if (!existing) {
+    throw new AppError(ErrorCodes.VALIDATION_FAILED, HttpStatusCode.NOT_FOUND, 'Quote template not found');
+  }
+  const set: Partial<typeof quoteTemplates.$inferInsert> = {
+    updatedAt: new Date(),
+  };
+  if (patch.category !== undefined) {
+    const category = normalizeCategoryName(patch.category);
+    if (!category) {
+      throw new AppError(ErrorCodes.VALIDATION_FAILED, HttpStatusCode.BAD_REQUEST, 'Category required');
+    }
+    set.category = category;
+  }
+  if (patch.title !== undefined) {
+    const title = normalizeQuoteTemplateText(patch.title);
+    if (!title) {
+      throw new AppError(ErrorCodes.VALIDATION_FAILED, HttpStatusCode.BAD_REQUEST, 'Title required');
+    }
+    set.title = title;
+  }
+  if (patch.description !== undefined) set.description = patch.description;
+  if (patch.sortOrder !== undefined && Number.isFinite(patch.sortOrder)) {
+    set.sortOrder = Number(patch.sortOrder);
+  }
+  if (patch.isActive !== undefined) set.isActive = patch.isActive;
+
+  const [row] = await db.update(quoteTemplates).set(set).where(eq(quoteTemplates.id, id)).returning();
+  if (!row) throw new AppError(ErrorCodes.INTERNAL_SERVER_ERROR, HttpStatusCode.INTERNAL_SERVER_ERROR);
+  return quoteTemplateToFrontend(row);
+}
+
+export async function deleteQuoteTemplateAdmin(db: Database, id: number) {
+  const [existing] = await db.select().from(quoteTemplates).where(eq(quoteTemplates.id, id)).limit(1);
+  if (!existing) {
+    throw new AppError(ErrorCodes.VALIDATION_FAILED, HttpStatusCode.NOT_FOUND, 'Quote template not found');
+  }
+  await db.delete(quoteTemplates).where(eq(quoteTemplates.id, id));
 }
 
 export function listProductsPublic(db: Database) {

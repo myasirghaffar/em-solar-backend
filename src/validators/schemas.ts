@@ -89,6 +89,26 @@ export const productCategoryUpdateSchema = z
   })
   .refine((o) => Object.keys(o).length > 0, { message: 'At least one field is required' });
 
+export const quoteTemplateCreateSchema = z
+  .object({
+    category: z.string().min(1).max(200),
+    title: z.string().min(1).max(500),
+    description: z.string().max(10000).optional(),
+    sortOrder: z.number().int().optional(),
+    isActive: z.boolean().optional(),
+  })
+  .strict();
+
+export const quoteTemplateUpdateSchema = z
+  .object({
+    category: z.string().min(1).max(200).optional(),
+    title: z.string().min(1).max(500).optional(),
+    description: z.string().max(10000).optional(),
+    sortOrder: z.number().int().optional(),
+    isActive: z.boolean().optional(),
+  })
+  .refine((o) => Object.keys(o).length > 0, { message: 'At least one field is required' });
+
 export const orderStatusUpdateSchema = z.object({
   order_status: z.enum(['pending', 'processing', 'shipped', 'delivered', 'cancelled']),
 });
@@ -147,6 +167,7 @@ const quoteLineSchema = z
     catalogCustomCategory: z.string().optional().nullable(),
     itemTitle: z.string().optional().nullable(),
     itemDescription: z.string().optional().nullable(),
+    includeInPdf: z.boolean().optional(),
   })
   .refine(
     (l) =>

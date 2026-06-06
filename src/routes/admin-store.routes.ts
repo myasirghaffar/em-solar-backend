@@ -25,6 +25,8 @@ import {
   productCategoryUpdateSchema,
   productCreateSchema,
   productUpdateSchema,
+  quoteTemplateCreateSchema,
+  quoteTemplateUpdateSchema,
 } from '../validators/schemas';
 
 export const adminStoreRoutes = new Hono<{ Bindings: AppBindings; Variables: AppVariables }>();
@@ -38,10 +40,11 @@ adminStoreRoutes.use('*', requireAdmin);
  */
 adminStoreRoutes.get('/bootstrap', async (c) => {
   const db = createDb(c.env);
-  const [products, productCategories, orders, customers, consultations, contactMessages, analytics, blogs] =
+  const [products, productCategories, quoteTemplates, orders, customers, consultations, contactMessages, analytics, blogs] =
     await Promise.all([
     catalog.listProductsAdmin(db),
     catalog.listProductCategoriesAdmin(db),
+    catalog.listQuoteTemplatesAdmin(db),
     catalog.listOrdersAdmin(db),
     catalog.listCustomersAdmin(db),
     catalog.listConsultationsAdmin(db),
@@ -54,6 +57,7 @@ adminStoreRoutes.get('/bootstrap', async (c) => {
     buildSuccessResponse({
       products,
       productCategories,
+      quoteTemplates,
       orders,
       customers,
       consultations,
@@ -116,6 +120,54 @@ adminStoreRoutes.delete('/product-categories/:id', async (c) => {
   }
   const db = createDb(c.env);
   await catalog.deleteProductCategoryAdmin(db, id);
+  return c.json(buildSuccessResponse(null));
+});
+
+adminStoreRoutes.get('/quote-templates', async (c) => {
+  const db = createDb(c.env);
+  const data = await catalog.listQuoteTemplatesAdmin(db);
+  return jsonWithRevalidation(c, buildSuccessResponse(data));
+});
+
+adminStoreRoutes.post(
+  '/quote-templates',
+  zValidator('json', quoteTemplateCreateSchema),
+  async (c) => {
+    const body = c.req.valid('json');
+    const db = createDb(c.env);
+    const data = await catalog.createQuoteTemplateAdmin(db, body);
+    return c.json(buildSuccessResponse(data), HttpStatusCode.CREATED);
+  },
+);
+
+adminStoreRoutes.patch(
+  '/quote-templates/:id',
+  zValidator('json', quoteTemplateUpdateSchema),
+  async (c) => {
+    const id = Number(c.req.param('id'));
+    if (!Number.isFinite(id) || id < 1) {
+      return c.json(
+        buildErrorResponse(ErrorCodes.VALIDATION_FAILED, HttpStatusCode.BAD_REQUEST, 'Invalid id'),
+        HttpStatusCode.BAD_REQUEST,
+      );
+    }
+    const body = c.req.valid('json');
+    const db = createDb(c.env);
+    const data = await catalog.updateQuoteTemplateAdmin(db, id, body);
+    return c.json(buildSuccessResponse(data));
+  },
+);
+
+adminStoreRoutes.delete('/quote-templates/:id', async (c) => {
+  const id = Number(c.req.param('id'));
+  if (!Number.isFinite(id) || id < 1) {
+    return c.json(
+      buildErrorResponse(ErrorCodes.VALIDATION_FAILED, HttpStatusCode.BAD_REQUEST, 'Invalid id'),
+      HttpStatusCode.BAD_REQUEST,
+    );
+  }
+  const db = createDb(c.env);
+  await catalog.deleteQuoteTemplateAdmin(db, id);
   return c.json(buildSuccessResponse(null));
 });
 
