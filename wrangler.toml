@@ -13,7 +13,7 @@
 # Supabase project: geqhoiiqwlymljdgppco | pooler host: aws-1-ap-south-1.pooler.supabase.com
 # Do not add VITE_API_URL here — frontend build-time only (em-solar/.env).
 
-name = "em-solar-api"
+name = "em-solar-backend"
 main = "src/index.ts"
 compatibility_date = "2025-04-01"
 compatibility_flags = ["nodejs_compat"]
