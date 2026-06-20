@@ -40,14 +40,12 @@ adminStoreRoutes.use('*', requireAdmin);
  */
 adminStoreRoutes.get('/bootstrap', async (c) => {
   const db = createDb(c.env);
-  const [products, productCategories, quoteTemplates, orders, customers, consultations, contactMessages, analytics, blogs] =
+  const [products, productCategories, quoteTemplates, orders, contactMessages, analytics, blogs] =
     await Promise.all([
     catalog.listProductsAdmin(db),
     catalog.listProductCategoriesAdmin(db),
     catalog.listQuoteTemplatesAdmin(db),
     catalog.listOrdersAdmin(db),
-    catalog.listCustomersAdmin(db),
-    catalog.listConsultationsAdmin(db),
     catalog.listContactMessagesAdmin(db),
     catalog.getAnalyticsAdmin(db),
     catalog.listBlogsAdmin(db),
@@ -59,8 +57,6 @@ adminStoreRoutes.get('/bootstrap', async (c) => {
       productCategories,
       quoteTemplates,
       orders,
-      customers,
-      consultations,
       contactMessages,
       analytics,
       blogs,

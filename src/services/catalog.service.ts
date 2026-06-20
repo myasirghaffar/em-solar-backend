@@ -2,6 +2,7 @@ import { and, asc, desc, eq } from 'drizzle-orm';
 import type { Database } from '../db/client';
 import { ErrorCodes } from '../common/constants/error-codes';
 import { HttpStatusCode } from '../common/constants/http-status';
+import { UserRole } from '../common/constants/roles.enum';
 import {
   blogs,
   consultations,
@@ -11,6 +12,7 @@ import {
   products,
   productCategories,
   quoteTemplates,
+  users,
   type OrderLineItem,
 } from '../db/schema';
 import { AppError } from '../lib/app-error';
@@ -387,12 +389,50 @@ export async function updateOrderStatusAdmin(db: Database, id: number, orderStat
   return orderToFrontend(row);
 }
 
-export function listCustomersAdmin(db: Database) {
-  return db
-    .select()
-    .from(customers)
-    .orderBy(desc(customers.id))
-    .then((rows) => rows.map(customerToFrontend));
+function dateToIso(value: Date | string | null | undefined): string {
+  if (value instanceof Date) return value.toISOString();
+  if (typeof value === 'string' && value.trim()) return new Date(value).toISOString();
+  return new Date().toISOString();
+}
+
+export async function listCustomersAdmin(db: Database) {
+  const [customerRows, userRows] = await Promise.all([
+    db.select().from(customers),
+    db.select().from(users).where(eq(users.role, UserRole.USER)),
+  ]);
+
+  const byEmail = new Map<string, any>();
+
+  for (const row of customerRows) {
+    const customer = customerToFrontend(row);
+    byEmail.set(customer.email.toLowerCase(), {
+      ...customer,
+      has_account: false,
+      email_verified: null,
+      source: 'checkout',
+    });
+  }
+
+  for (const user of userRows) {
+    const email = user.email.toLowerCase();
+    const existing = byEmail.get(email);
+    byEmail.set(email, {
+      id: existing?.id ?? `user:${user.id}`,
+      account_id: user.id,
+      name: existing?.name || user.name,
+      email,
+      phone: existing?.phone ?? '',
+      city: existing?.city ?? '',
+      created_at: existing?.created_at ?? dateToIso(user.createdAt),
+      has_account: true,
+      email_verified: user.emailVerified,
+      source: existing ? 'account_checkout' : 'account',
+    });
+  }
+
+  return Array.from(byEmail.values()).sort(
+    (a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime(),
+  );
 }
 
 export function listConsultationsAdmin(db: Database) {
